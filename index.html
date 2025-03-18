@@ -3,25 +3,25 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Employee Time-Off Calendar</title>
+    <title>Night Mentor Time-Off Calendar</title>
     <script defer src="script.js"></script>
     <link rel="stylesheet" href="styles.css">
 </head>
 <body>
-    <h1>Employee Time-Off Calendar</h1>
+    <h1>Night Mentor Time-Off Calendar</h1>
     <div id="calendar" class="calendar"></div>
-    <button onclick="generateReport()">Generate Report</button>
+    <button onclick="generateReport()">Generate Strings</button>
     <pre id="report"></pre>
     
     <script>
-        const employees = ["Avree", "Mitch", "Jordan", "Taylor", "Casey"]; // Example employee list
-        let timeOffData = {}; // Store time-off requests
+        const mentors = ["Alexie", "Avree", "Bella", "Brooke", "Elle", "Emma", "Michael", "Mitch", "Sam"];
+        let timeOffData = {};
 
         function createCalendar() {
             const calendar = document.getElementById("calendar");
             calendar.innerHTML = "";
-            const daysInMonth = new Date(2025, 3, 0).getDate(); // Example: April 2025
-            const firstDay = new Date(2025, 2, 1).getDay(); // Adjust for first day of the month
+            const daysInMonth = new Date(2025, 3, 0).getDate();
+            const firstDay = new Date(2025, 2, 1).getDay();
             
             const daysOfWeek = ["Sun", "Mon", "Tue", "Wed", "Thu", "Fri", "Sat"];
             daysOfWeek.forEach(day => {
@@ -48,7 +48,7 @@
                 
                 for (let i = 0; i < 4; i++) {
                     const select = document.createElement("select");
-                    select.innerHTML = '<option value="">-</option>' + employees.map(emp => `<option value="${emp}">${emp}</option>`).join("");
+                    select.innerHTML = '<option value="">-</option>' + mentors.map(emp => `<option value="${emp}">${emp}</option>`).join("");
                     select.onchange = () => saveTimeOff(day, select);
                     dayDiv.appendChild(select);
                 }
@@ -69,17 +69,17 @@
 
         function generateReport() {
             let report = "";
-            let employeeRequests = {};
+            let mentorRequests = {};
             
             Object.keys(timeOffData).forEach(day => {
                 timeOffData[day].forEach(name => {
-                    if (!employeeRequests[name]) employeeRequests[name] = [];
-                    employeeRequests[name].push(day);
+                    if (!mentorRequests[name]) mentorRequests[name] = [];
+                    mentorRequests[name].push(day);
                 });
             });
             
-            Object.keys(employeeRequests).forEach(name => {
-                report += `${name}: ${employeeRequests[name].join(", ")}\n`;
+            Object.keys(mentorRequests).forEach(name => {
+                report += `${name}: ${mentorRequests[name].join(", ")}\n`;
             });
             
             document.getElementById("report").textContent = report;
