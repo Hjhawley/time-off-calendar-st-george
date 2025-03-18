@@ -16,11 +16,10 @@
     <script type="module">
         import { initializeApp } from "https://www.gstatic.com/firebasejs/10.7.0/firebase-app.js";
         import { getFirestore, doc, setDoc, getDoc, onSnapshot } from "https://www.gstatic.com/firebasejs/10.7.0/firebase-firestore.js";
-        import { firebaseConfig } from "./config.js"; // Ensure this file exists and is properly imported
+        import { firebaseConfig } from "./config.js";
 
         console.log("Firebase Config Loaded:", firebaseConfig);
 
-        // Initialize Firebase & Firestore
         const app = initializeApp(firebaseConfig);
         console.log("Firebase App Initialized:", app);
         const db = getFirestore(app);
@@ -28,7 +27,7 @@
 
         const mentors = ["Alexie", "Avree", "Bella", "Brooke", "Elle", "Emma", "Michael", "Mitch", "Sam"];
         let timeOffData = {};
-        const targetMonth = 2; // 0-based index
+        const targetMonth = 2;
         const targetYear = 2025;
         
         async function loadTimeOffData() {
@@ -83,8 +82,8 @@
                 for (let i = 0; i < 4; i++) {
                     const select = document.createElement("select");
                     select.innerHTML = '<option value="">-</option>' + mentors.map(emp => `<option value="${emp}">${emp}</option>`).join("");
-                    select.onchange = () => saveTimeOff(day, select);
-                    if (timeOffData[day] && timeOffData[day][i]) {
+                    select.onchange = () => saveTimeOff(day, i, select);
+                    if (timeOffData[day] && timeOffData[day][i] !== undefined) {
                         select.value = timeOffData[day][i];
                     }
                     dayDiv.appendChild(select);
@@ -94,19 +93,16 @@
             }
         }
 
-        async function saveTimeOff(day, select) {
+        async function saveTimeOff(day, index, select) {
             try {
                 const name = select.value;
-                if (!timeOffData[day]) timeOffData[day] = [];
-                if (name && !timeOffData[day].includes(name)) {
-                    timeOffData[day].push(name);
-                } else {
-                    timeOffData[day] = timeOffData[day].filter(n => n !== name);
-                }
+                if (!timeOffData[day]) timeOffData[day] = Array(4).fill("");
+                timeOffData[day][index] = name;
+                console.log("Saving time-off data to Firestore:", timeOffData);
                 await setDoc(doc(db, "timeOff", "mentors"), timeOffData);
-                console.log("Saved time off data:", timeOffData);
+                console.log("Successfully saved!");
             } catch (error) {
-                console.error("Error saving time off data:", error);
+                console.error("Error saving time-off data:", error);
             }
         }
 
@@ -116,8 +112,10 @@
             
             Object.keys(timeOffData).forEach(day => {
                 timeOffData[day].forEach(name => {
-                    if (!mentorRequests[name]) mentorRequests[name] = [];
-                    mentorRequests[name].push(day);
+                    if (name && name !== "") {
+                        if (!mentorRequests[name]) mentorRequests[name] = [];
+                        mentorRequests[name].push(day);
+                    }
                 });
             });
             
@@ -125,6 +123,7 @@
                 report += `${name}: ${mentorRequests[name].join(", ")}\n`;
             });
             
+            console.log("Generated report:", report);
             document.getElementById("report").textContent = report;
         }
         
