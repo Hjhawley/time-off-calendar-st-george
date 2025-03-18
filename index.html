@@ -9,6 +9,7 @@
 </head>
 <body>
     <h1>Night Mentor Time-Off Calendar</h1>
+    <h2 id="month-name"></h2>
     <div id="calendar" class="calendar"></div>
     <button onclick="generateReport()">Generate Strings</button>
     <pre id="report"></pre>
@@ -16,12 +17,18 @@
     <script>
         const mentors = ["Alexie", "Avree", "Bella", "Brooke", "Elle", "Emma", "Michael", "Mitch", "Sam"];
         let timeOffData = {};
-
+        const targetMonth = 2; // March (0-based index, so 2 = March)
+        const targetYear = 2025;
+        
         function createCalendar() {
             const calendar = document.getElementById("calendar");
             calendar.innerHTML = "";
-            const daysInMonth = new Date(2025, 3, 0).getDate();
-            const firstDay = new Date(2025, 2, 1).getDay();
+            
+            const monthNames = ["January", "February", "March", "April", "May", "June", "July", "August", "September", "October", "November", "December"];
+            document.getElementById("month-name").textContent = `${monthNames[targetMonth]} ${targetYear}`;
+            
+            const daysInMonth = new Date(targetYear, targetMonth + 1, 0).getDate();
+            const firstDay = new Date(targetYear, targetMonth, 1).getDay();
             
             const daysOfWeek = ["Sun", "Mon", "Tue", "Wed", "Thu", "Fri", "Sat"];
             daysOfWeek.forEach(day => {
