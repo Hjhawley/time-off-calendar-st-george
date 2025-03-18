@@ -1,0 +1,98 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Employee Time-Off Calendar</title>
+    <script defer src="script.js"></script>
+    <style>
+        body { font-family: Arial, sans-serif; text-align: center; }
+        .calendar { display: grid; grid-template-columns: repeat(7, 1fr); gap: 10px; }
+        .day { border: 1px solid #ccc; padding: 10px; min-height: 120px; position: relative; }
+        .day select { display: block; margin: 5px auto; width: 90%; }
+        .header { font-weight: bold; background-color: #ddd; padding: 10px; }
+        .date { font-size: 14px; font-weight: bold; position: absolute; top: 5px; right: 5px; }
+    </style>
+</head>
+<body>
+    <h1>Employee Time-Off Calendar</h1>
+    <div id="calendar" class="calendar"></div>
+    <button onclick="generateReport()">Generate Report</button>
+    <pre id="report"></pre>
+    
+    <script>
+        const employees = ["Avree", "Mitch", "Jordan", "Taylor", "Casey"]; // Example employee list
+        let timeOffData = {}; // Store time-off requests
+
+        function createCalendar() {
+            const calendar = document.getElementById("calendar");
+            calendar.innerHTML = "";
+            const daysInMonth = new Date(2025, 3, 0).getDate(); // Example: April 2025
+            const firstDay = new Date(2025, 2, 1).getDay(); // Adjust for first day of the month
+            
+            const daysOfWeek = ["Sun", "Mon", "Tue", "Wed", "Thu", "Fri", "Sat"];
+            daysOfWeek.forEach(day => {
+                const header = document.createElement("div");
+                header.className = "header";
+                header.textContent = day;
+                calendar.appendChild(header);
+            });
+            
+            for (let i = 0; i < firstDay; i++) {
+                const emptyCell = document.createElement("div");
+                emptyCell.className = "day";
+                calendar.appendChild(emptyCell);
+            }
+            
+            for (let day = 1; day <= daysInMonth; day++) {
+                const dayDiv = document.createElement("div");
+                dayDiv.className = "day";
+                
+                const dateLabel = document.createElement("div");
+                dateLabel.className = "date";
+                dateLabel.textContent = day;
+                dayDiv.appendChild(dateLabel);
+                
+                for (let i = 0; i < 5; i++) {
+                    const select = document.createElement("select");
+                    select.innerHTML = '<option value="">-</option>' + employees.map(emp => `<option value="${emp}">${emp}</option>`).join("");
+                    select.onchange = () => saveTimeOff(day, select);
+                    dayDiv.appendChild(select);
+                }
+                
+                calendar.appendChild(dayDiv);
+            }
+        }
+
+        function saveTimeOff(day, select) {
+            const name = select.value;
+            if (!timeOffData[day]) timeOffData[day] = [];
+            if (name && !timeOffData[day].includes(name)) {
+                timeOffData[day].push(name);
+            } else {
+                timeOffData[day] = timeOffData[day].filter(n => n !== name);
+            }
+        }
+
+        function generateReport() {
+            let report = "";
+            let employeeRequests = {};
+            
+            Object.keys(timeOffData).forEach(day => {
+                timeOffData[day].forEach(name => {
+                    if (!employeeRequests[name]) employeeRequests[name] = [];
+                    employeeRequests[name].push(day);
+                });
+            });
+            
+            Object.keys(employeeRequests).forEach(name => {
+                report += `${name}: ${employeeRequests[name].join(", ")}\n`;
+            });
+            
+            document.getElementById("report").textContent = report;
+        }
+        
+        createCalendar();
+    </script>
+</body>
+</html>
