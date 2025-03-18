@@ -17,7 +17,7 @@
     <script>
         const mentors = ["Alexie", "Avree", "Bella", "Brooke", "Elle", "Emma", "Michael", "Mitch", "Sam"];
         let timeOffData = {};
-        const targetMonth = 2; // March (0-based index, so 2 = March)
+        const targetMonth = 3; // 0-based index
         const targetYear = 2025;
         
         function createCalendar() {
@@ -40,7 +40,7 @@
             
             for (let i = 0; i < firstDay; i++) {
                 const emptyCell = document.createElement("div");
-                emptyCell.className = "day";
+                emptyCell.className = "empty";
                 calendar.appendChild(emptyCell);
             }
             
