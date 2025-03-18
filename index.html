@@ -15,12 +15,43 @@
     <pre id="report"></pre>
     
     <script>
+        // Import the functions you need from the SDKs you need
+        import { initializeApp } from "firebase/app";
+        import { getAnalytics } from "firebase/analytics";
+        // TODO: Add SDKs for Firebase products that you want to use
+        // https://firebase.google.com/docs/web/setup#available-libraries
+
+        // Your web app's Firebase configuration
+        // For Firebase JS SDK v7.20.0 and later, measurementId is optional
+        const firebaseConfig = {
+        apiKey: "AIzaSyB07xhZB4WyEPHB4ICP1gWz5AgdtgRIZac",
+        authDomain: "timeoffcalendar-1d3ab.firebaseapp.com",
+        projectId: "timeoffcalendar-1d3ab",
+        storageBucket: "timeoffcalendar-1d3ab.firebasestorage.app",
+        messagingSenderId: "959934939505",
+        appId: "1:959934939505:web:2883b8fed3506adba076d0",
+        measurementId: "G-ERZRTGWY50"
+        };
+
+        // Initialize Firebase
+        const app = initializeApp(firebaseConfig);
+        const analytics = getAnalytics(app);
+        
         const mentors = ["Alexie", "Avree", "Bella", "Brooke", "Elle", "Emma", "Michael", "Mitch", "Sam"];
         let timeOffData = {};
         const targetMonth = 3; // 0-based index
         const targetYear = 2025;
         
-        function createCalendar() {
+        async function loadTimeOffData() {
+            const docSnap = await getDoc(doc(db, "timeOff", "mentors"));
+            if (docSnap.exists()) {
+                timeOffData = docSnap.data();
+            }
+        }
+        
+        async function createCalendar() {
+            await loadTimeOffData();  // Load data before rendering
+        
             const calendar = document.getElementById("calendar");
             calendar.innerHTML = "";
             
@@ -37,13 +68,7 @@
                 header.textContent = day;
                 calendar.appendChild(header);
             });
-            
-            for (let i = 0; i < firstDay; i++) {
-                const emptyCell = document.createElement("div");
-                emptyCell.className = "empty";
-                calendar.appendChild(emptyCell);
-            }
-            
+        
             for (let day = 1; day <= daysInMonth; day++) {
                 const dayDiv = document.createElement("div");
                 dayDiv.className = "day";
@@ -52,19 +77,22 @@
                 dateLabel.className = "date";
                 dateLabel.textContent = day;
                 dayDiv.appendChild(dateLabel);
-                
+        
                 for (let i = 0; i < 4; i++) {
                     const select = document.createElement("select");
                     select.innerHTML = '<option value="">-</option>' + mentors.map(emp => `<option value="${emp}">${emp}</option>`).join("");
                     select.onchange = () => saveTimeOff(day, select);
+                    if (timeOffData[day] && timeOffData[day][i]) {
+                        select.value = timeOffData[day][i]; // Prepopulate
+                    }
                     dayDiv.appendChild(select);
                 }
-                
+        
                 calendar.appendChild(dayDiv);
             }
-        }
+        }        
 
-        function saveTimeOff(day, select) {
+        async function saveTimeOff(day, select) {
             const name = select.value;
             if (!timeOffData[day]) timeOffData[day] = [];
             if (name && !timeOffData[day].includes(name)) {
@@ -72,7 +100,9 @@
             } else {
                 timeOffData[day] = timeOffData[day].filter(n => n !== name);
             }
-        }
+            // Save data to Firestore
+            await setDoc(doc(db, "timeOff", "mentors"), timeOffData);
+        }        
 
         function generateReport() {
             let report = "";
@@ -93,6 +123,13 @@
         }
         
         createCalendar();
+
+        onSnapshot(doc(db, "timeOff", "mentors"), (doc) => {
+            if (doc.exists()) {
+                timeOffData = doc.data();
+                createCalendar(); // Re-render the calendar with updated data
+            }
+        });        
     </script>
 </body>
 </html>
