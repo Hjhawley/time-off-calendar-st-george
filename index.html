@@ -13,52 +13,23 @@
     <div id="calendar" class="calendar"></div>
     <button onclick="generateReport()">Generate Strings</button>
     <pre id="report"></pre>
-
-    <script type="module">
-        import { initializeApp } from "https://www.gstatic.com/firebasejs/10.7.0/firebase-app.js";
-        import { getFirestore, doc, setDoc, getDoc, onSnapshot } from "https://www.gstatic.com/firebasejs/10.7.0/firebase-firestore.js";
-
-        // Firebase Configuration
-        const firebaseConfig = {
-            apiKey: "AIzaSyB07xhZB4WyEPHB4ICP1gWz5AgdtgRIZac",
-            authDomain: "timeoffcalendar-1d3ab.firebaseapp.com",
-            projectId: "timeoffcalendar-1d3ab",
-            storageBucket: "timeoffcalendar-1d3ab.appspot.com",
-            messagingSenderId: "959934939505",
-            appId: "1:959934939505:web:2883b8fed3506adba076d0",
-            measurementId: "G-ERZRTGWY50"
-        };
-
-        // Initialize Firebase & Firestore
-        const app = initializeApp(firebaseConfig);
-        const db = getFirestore(app);
-
+    
+    <script>
         const mentors = ["Alexie", "Avree", "Bella", "Brooke", "Elle", "Emma", "Michael", "Mitch", "Sam"];
         let timeOffData = {};
-
-        const targetMonth = 2; // March (0-based index)
+        const targetMonth = 2; // 0-based index
         const targetYear = 2025;
-
-        // Load Data from Firestore
-        async function loadTimeOffData() {
-            const docSnap = await getDoc(doc(db, "timeOff", "mentors"));
-            if (docSnap.exists()) {
-                timeOffData = docSnap.data();
-            }
-        }
-
-        async function createCalendar() {
-            await loadTimeOffData();
-
+        
+        function createCalendar() {
             const calendar = document.getElementById("calendar");
             calendar.innerHTML = "";
-
+            
             const monthNames = ["January", "February", "March", "April", "May", "June", "July", "August", "September", "October", "November", "December"];
             document.getElementById("month-name").textContent = `${monthNames[targetMonth]} ${targetYear}`;
-
+            
             const daysInMonth = new Date(targetYear, targetMonth + 1, 0).getDate();
             const firstDay = new Date(targetYear, targetMonth, 1).getDay();
-
+            
             const daysOfWeek = ["Sun", "Mon", "Tue", "Wed", "Thu", "Fri", "Sat"];
             daysOfWeek.forEach(day => {
                 const header = document.createElement("div");
@@ -66,37 +37,34 @@
                 header.textContent = day;
                 calendar.appendChild(header);
             });
-
+            
             for (let i = 0; i < firstDay; i++) {
                 const emptyCell = document.createElement("div");
                 emptyCell.className = "empty";
                 calendar.appendChild(emptyCell);
             }
-
+            
             for (let day = 1; day <= daysInMonth; day++) {
                 const dayDiv = document.createElement("div");
                 dayDiv.className = "day";
-
+                
                 const dateLabel = document.createElement("div");
                 dateLabel.className = "date";
                 dateLabel.textContent = day;
                 dayDiv.appendChild(dateLabel);
-
+                
                 for (let i = 0; i < 4; i++) {
                     const select = document.createElement("select");
                     select.innerHTML = '<option value="">-</option>' + mentors.map(emp => `<option value="${emp}">${emp}</option>`).join("");
                     select.onchange = () => saveTimeOff(day, select);
-                    if (timeOffData[day] && timeOffData[day][i]) {
-                        select.value = timeOffData[day][i]; // Prepopulate
-                    }
                     dayDiv.appendChild(select);
                 }
-
+                
                 calendar.appendChild(dayDiv);
             }
         }
 
-        async function saveTimeOff(day, select) {
+        function saveTimeOff(day, select) {
             const name = select.value;
             if (!timeOffData[day]) timeOffData[day] = [];
             if (name && !timeOffData[day].includes(name)) {
@@ -104,34 +72,26 @@
             } else {
                 timeOffData[day] = timeOffData[day].filter(n => n !== name);
             }
-            await setDoc(doc(db, "timeOff", "mentors"), timeOffData);
         }
 
         function generateReport() {
             let report = "";
             let mentorRequests = {};
-
+            
             Object.keys(timeOffData).forEach(day => {
                 timeOffData[day].forEach(name => {
                     if (!mentorRequests[name]) mentorRequests[name] = [];
                     mentorRequests[name].push(day);
                 });
             });
-
+            
             Object.keys(mentorRequests).forEach(name => {
                 report += `${name}: ${mentorRequests[name].join(", ")}\n`;
             });
-
+            
             document.getElementById("report").textContent = report;
         }
-
-        onSnapshot(doc(db, "timeOff", "mentors"), (doc) => {
-            if (doc.exists()) {
-                timeOffData = doc.data();
-                createCalendar();
-            }
-        });
-
+        
         createCalendar();
     </script>
 </body>
