@@ -5,24 +5,14 @@
     padding: 0;
     box-sizing: border-box;
     font-weight: normal;
-    transition: background-color 0.25s ease, border-color 0.25s ease, box-shadow 0.25s ease;
 }
 
 :root {
     --max-width: 1000px;
     --primary-color: #42BFEF;
     --secondary-color: #1A2E86;
-    --tertiary-color: #fd5;
     --background-color: #d5dfe4;
     --text-color: #000;
-    --h2-color: var(--text-color);
-    --h3-color: var(--primary-color);
-    --header-background: var(--primary-color);
-    --header-text-color: #fff;
-    --footer-text-color: #888;
-    --link-color: var(--secondary-color);
-    --link-hover-color: var(--tertiary-color);
-    --visited-color: #7397a8;
     --section-border-color: var(--secondary-color);
     --button-background: var(--primary-color);
     --button-hover-background: var(--secondary-color);
@@ -53,8 +43,38 @@ button, .button {
     justify-content: center;
 }
 
-.calendar { display: grid; grid-template-columns: repeat(7, 1fr); gap: 5px; }
-.day { border: 1px solid var(--secondary-color); padding: 10px; min-height: 120px; position: relative; }
-.day select { display: block; margin: 15px auto; width: 90%; }
-.header { font-weight:400; color: white; background-color: var(--primary-color); padding: 10px; }
-.date { font-size: 14px; font-weight: bold; position: absolute; top: 5px; right: 5px; }
+.calendar { 
+    display: grid; 
+    grid-template-columns: repeat(7, 1fr); 
+    gap: 15px; 
+}
+
+.day { 
+    border: 1px solid var(--secondary-color); 
+    padding: 10px; 
+    min-height: 120px; 
+    position: relative; 
+    box-shadow: var(--shadow);
+}
+
+.day select { 
+    display: block; 
+    margin: 15px auto; 
+    width: 90%; 
+}
+
+.header { 
+    font-weight:400; 
+    color: white; 
+    background-color: var(--primary-color); 
+    padding: 10px; 
+    box-shadow: var(--shadow);
+}
+
+.date { 
+    font-size: 14px; 
+    font-weight: bold; 
+    position: absolute; 
+    top: 5px; 
+    right: 5px; 
+}
