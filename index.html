@@ -4,7 +4,6 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Night Mentor Time-Off Calendar</title>
-    <script defer src="script.js"></script>
     <link rel="stylesheet" href="styles.css">
 </head>
 <body>
@@ -17,11 +16,15 @@
     <script type="module">
         import { initializeApp } from "https://www.gstatic.com/firebasejs/10.7.0/firebase-app.js";
         import { getFirestore, doc, setDoc, getDoc, onSnapshot } from "https://www.gstatic.com/firebasejs/10.7.0/firebase-firestore.js";
-        import { firebaseConfig } from "./config.js"; // Securely import API key
+        import { firebaseConfig } from "./config.js"; // Ensure this file exists and is properly imported
+
+        console.log("Firebase Config Loaded:", firebaseConfig);
 
         // Initialize Firebase & Firestore
         const app = initializeApp(firebaseConfig);
+        console.log("Firebase App Initialized:", app);
         const db = getFirestore(app);
+        console.log("Firestore Initialized:", db);
 
         const mentors = ["Alexie", "Avree", "Bella", "Brooke", "Elle", "Emma", "Michael", "Mitch", "Sam"];
         let timeOffData = {};
@@ -29,9 +32,16 @@
         const targetYear = 2025;
         
         async function loadTimeOffData() {
-            const docSnap = await getDoc(doc(db, "timeOff", "mentors"));
-            if (docSnap.exists()) {
-                timeOffData = docSnap.data();
+            try {
+                const docSnap = await getDoc(doc(db, "timeOff", "mentors"));
+                if (docSnap.exists()) {
+                    timeOffData = docSnap.data();
+                    console.log("Loaded Time Off Data:", timeOffData);
+                } else {
+                    console.warn("No Time Off Data Found");
+                }
+            } catch (error) {
+                console.error("Error loading time off data:", error);
             }
         }
         
@@ -85,14 +95,19 @@
         }
 
         async function saveTimeOff(day, select) {
-            const name = select.value;
-            if (!timeOffData[day]) timeOffData[day] = [];
-            if (name && !timeOffData[day].includes(name)) {
-                timeOffData[day].push(name);
-            } else {
-                timeOffData[day] = timeOffData[day].filter(n => n !== name);
+            try {
+                const name = select.value;
+                if (!timeOffData[day]) timeOffData[day] = [];
+                if (name && !timeOffData[day].includes(name)) {
+                    timeOffData[day].push(name);
+                } else {
+                    timeOffData[day] = timeOffData[day].filter(n => n !== name);
+                }
+                await setDoc(doc(db, "timeOff", "mentors"), timeOffData);
+                console.log("Saved time off data:", timeOffData);
+            } catch (error) {
+                console.error("Error saving time off data:", error);
             }
-            await setDoc(doc(db, "timeOff", "mentors"), timeOffData);
         }
 
         function generateReport() {
@@ -116,6 +131,7 @@
         onSnapshot(doc(db, "timeOff", "mentors"), (doc) => {
             if (doc.exists()) {
                 timeOffData = doc.data();
+                console.log("Live Update - Time Off Data:", timeOffData);
                 createCalendar();
             }
         });
