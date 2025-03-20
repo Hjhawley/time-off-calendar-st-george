@@ -1,4 +1,4 @@
-@import url('https://fonts.googleapis.com/css2?family=Poppins:ital,wght@0,100;0,200;0,400;0,500;0,600;0,700;0,800;0,900;1,100;1,300;1,400;1,500;1,600;1,700;1,800;1,900&display=swap');
+@import url('https://fonts.googleapis.com/css2?family=Poppins:ital,wght@0,100;0,200;0,400;0,500;0,600;0,700;0,800;0,900;1,100;1,300;1,400;1,500;1,600;1,700;1,800&display=swap');
 
 * {
     margin: 0;
@@ -27,7 +27,7 @@ body, #theme-toggle {
     background-color: var(--background-color);
     color: var(--text-color);
     padding: 10px;
-    overflow-x: auto; /* Allow horizontal scrolling */
+    overflow-x: auto;
     white-space: nowrap;
 }
 
@@ -42,28 +42,49 @@ button, .button {
     box-shadow: var(--shadow);
 }
 
+.header-container {
+    position: fixed;
+    top: 0;
+    left: 0;
+    width: 100%;
+    background: var(--background-color);
+    z-index: 1000;
+    padding: 15px 0;
+    box-shadow: var(--shadow);
+    text-align: center;
+}
+
 h1 {
+    font-size: 30px;
+    margin: 0;
+}
+
+h2 {
     font-size: 20px;
+    margin: 5px 0 15px 0;
 }
 
 .calendar-container {
     overflow-x: auto;
     width: 100%;
+    margin-top: 80px; /* Prevent overlap with fixed header */
+    padding-top: 100px;
 }
 
 .calendar {
     display: grid;
-    grid-template-columns: repeat(7, minmax(120px, 1fr)); /* Wider columns */
+    grid-template-columns: repeat(7, minmax(120px, 1fr));
     gap: 5px;
-    max-width: max-content; /* Allow horizontal expansion */
+    max-width: max-content;
     padding: 5px;
     overflow: visible;
+    margin: auto;
 }
 
 .day {
     border: 1px solid var(--secondary-color);
     padding: 10px;
-    min-height: 80px; /* Increased height for better readability */
+    min-height: 80px;
     position: relative;
     box-shadow: var(--shadow);
     border-radius: 5px;
@@ -76,7 +97,7 @@ h1 {
 .day select {
     display: block;
     margin: 5px auto;
-    width: 100%; /* Expand dropdown to fill width */
+    width: 100%;
     padding: 4px;
     border-radius: 3px;
     font-size: 12px;
