@@ -49,10 +49,17 @@ button, .button {
     width: 100%;
     background: var(--background-color);
     z-index: 1000;
-    padding: 15px 0;
+    padding: 15px 0 20px 0; /* Increased bottom padding for more breathing room */
     box-shadow: var(--shadow);
     text-align: center;
 }
+
+.calendar-container {
+    overflow-x: auto;
+    width: 100%;
+    margin-top: 120px; /* Adjusted to push the calendar down slightly */
+}
+
 
 h1 {
     font-size: 30px;
@@ -62,12 +69,6 @@ h1 {
 h2 {
     font-size: 20px;
     margin: 5px 0 10px 0;
-}
-
-.calendar-container {
-    overflow-x: auto;
-    width: 100%;
-    margin-top: 100px; /* Prevent overlap with fixed header */
 }
 
 .calendar {
