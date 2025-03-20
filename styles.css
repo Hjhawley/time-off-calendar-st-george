@@ -47,9 +47,9 @@ button, .button {
     top: 0;
     left: 0;
     width: 100%;
-    background: var(--background-color);
+    background-color: white;
     z-index: 1000;
-    padding: 15px 0 20px 0; /* Increased bottom padding for more breathing room */
+    padding: 15px 0 10px 0; /* Reduced bottom padding */
     box-shadow: var(--shadow);
     text-align: center;
 }
@@ -57,18 +57,32 @@ button, .button {
 .calendar-container {
     overflow-x: auto;
     width: 100%;
-    margin-top: 120px; /* Adjusted to push the calendar down slightly */
+    margin-top: 100px; /* Adjusted to align better */
 }
 
-
 h1 {
-    font-size: 30px;
+    font-size: clamp(20px, 4vw, 30px); /* Scales between 20px and 30px */
     margin: 0;
+    white-space: nowrap;
+    overflow: hidden;
 }
 
 h2 {
-    font-size: 20px;
-    margin: 5px 0 10px 0;
+    font-size: clamp(16px, 3vw, 20px);
+    margin: 5px 0;
+    white-space: nowrap;
+    overflow: hidden;
+}
+
+.header {
+    font-weight: 500;
+    color: white;
+    background-color: var(--primary-color);
+    padding: 4px; /* Reduce padding */
+    box-shadow: var(--shadow);
+    text-align: center;
+    border-radius: 5px;
+    font-size: 16px;
 }
 
 .calendar {
@@ -103,17 +117,6 @@ h2 {
     font-size: 12px;
 }
 
-.header {
-    font-weight: 500;
-    color: white;
-    background-color: var(--primary-color);
-    padding: 6px;
-    box-shadow: var(--shadow);
-    text-align: center;
-    border-radius: 5px;
-    font-size: 12px;
-}
-
 .date {
     font-weight: bold;
     position: relative;
@@ -138,9 +141,6 @@ h2 {
     .header {
         padding: 5px;
     }
-    button, .button {
-        padding: 6px 10px;
-    }
 }
 
 @media (max-width: 480px) {
@@ -153,8 +153,5 @@ h2 {
     }
     .header {
         padding: 4px;
-    }
-    button, .button {
-        padding: 5px 8px;
     }
 }
