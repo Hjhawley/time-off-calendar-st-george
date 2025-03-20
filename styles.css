@@ -5,6 +5,7 @@
     padding: 0;
     box-sizing: border-box;
     font-weight: normal;
+    font-size: 14px;
 }
 
 :root {
@@ -21,60 +22,102 @@
 
 body, #theme-toggle {
     font-family: 'Poppins', sans-serif;
-    font-size: 16px;
     text-align: center;
-    line-height: 1.6;
+    line-height: 1.4;
     background-color: var(--background-color);
     color: var(--text-color);
-    padding: 40px;
+    padding: 10px;
 }
 
 button, .button {
     background-color: var(--button-background);
     border: none;
-    padding: 10px 15px;
-    border-radius: 25px;
-    margin-top: 20px;
+    padding: 8px 12px;
+    border-radius: 20px;
+    margin-top: 10px;
     cursor: pointer;
-    color: #eee;
-    box-shadow: var(--shadow);
-    display: flex;
-    align-items: center;
-    justify-content: center;
-}
-
-.calendar { 
-    display: grid; 
-    grid-template-columns: repeat(7, 1fr); 
-    gap: 15px; 
-}
-
-.day { 
-    border: 1px solid var(--secondary-color); 
-    padding: 10px; 
-    min-height: 120px; 
-    position: relative; 
+    color: #fff;
     box-shadow: var(--shadow);
 }
 
-.day select { 
-    display: block; 
-    margin: 15px auto; 
-    width: 90%; 
+h1 {
+    font-size: 20px;
 }
 
-.header { 
-    font-weight:400; 
-    color: white; 
-    background-color: var(--primary-color); 
-    padding: 10px; 
+.calendar {
+    display: grid;
+    grid-template-columns: repeat(7, 1fr);
+    gap: 5px;
+    max-width: 100%;
+    padding: 5px;
+    overflow: hidden;
+}
+
+.day {
+    border: 1px solid var(--secondary-color);
+    padding: 10px;
+    min-height: 60px;
+    position: relative;
     box-shadow: var(--shadow);
+    border-radius: 5px;
 }
 
-.date { 
-    font-size: 14px; 
-    font-weight: bold; 
-    position: absolute; 
-    top: 5px; 
-    right: 5px; 
+.day select {
+    display: block;
+    margin: 5px auto;
+    width: 90%;
+    padding: 4px;
+    border-radius: 3px;
+}
+
+.header {
+    font-weight: 500;
+    color: white;
+    background-color: var(--primary-color);
+    padding: 6px;
+    box-shadow: var(--shadow);
+    text-align: center;
+    border-radius: 5px;
+}
+
+.date {
+    font-weight: bold;
+    position: absolute;
+    top: 3px;
+    right: 3px;
+}
+
+/* Responsive Design */
+@media (max-width: 768px) {
+    .calendar {
+        grid-template-columns: repeat(7, 1fr);
+        gap: 3px;
+    }
+    .day {
+        min-height: 50px;
+        min-width: 50px;
+        padding: 1px;
+    }
+    .header {
+        padding: 5px;
+    }
+    button, .button {
+        padding: 6px 10px;
+    }
+}
+
+@media (max-width: 480px) {
+    .calendar {
+        grid-template-columns: repeat(7, 1fr);
+        gap: 2px;
+    }
+    .day {
+        min-height: 40px;
+    }
+    .header {
+        padding: 4px;
+    }
+    button, .button {
+        padding: 5px 8px;
+    }
 }
