@@ -87,7 +87,8 @@
                 dateLabel.textContent = day;
                 dayDiv.appendChild(dateLabel);
                 
-                for (let i = 0; i < 4; i++) {
+                let slots_available = 4;
+                for (let i = 0; i < slots_available; i++) {
                     const select = document.createElement("select");
                     select.innerHTML = '<option value="">-</option>' + mentors.map(emp => `<option value="${emp}">${emp}</option>`).join("");
                     select.onchange = () => saveTimeOff(day, i, select);
