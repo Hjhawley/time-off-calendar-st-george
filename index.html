@@ -35,7 +35,7 @@
 
         const mentors = ["Alexie", "Avree", "Bella", "Brooke", "Elle", "Emma", "Michael", "Mitch", "Sam"];
         let timeOffData = {};
-        const targetMonth = 2;
+        const targetMonth = 3; // Edit month here; 0 index so 3 is April
         const targetYear = 2025;
         
         async function loadTimeOffData() {
@@ -134,6 +134,8 @@
             console.log("Generated report:", report);
             document.getElementById("report").textContent = report;
         }
+        
+        window.generateReport = generateReport;        
         
         onSnapshot(doc(db, "timeOff", "mentors"), (doc) => {
             if (doc.exists()) {
