@@ -27,6 +27,8 @@ body, #theme-toggle {
     background-color: var(--background-color);
     color: var(--text-color);
     padding: 10px;
+    overflow-x: auto; /* Allow horizontal scrolling */
+    white-space: nowrap;
 }
 
 button, .button {
@@ -44,30 +46,40 @@ h1 {
     font-size: 20px;
 }
 
+.calendar-container {
+    overflow-x: auto;
+    width: 100%;
+}
+
 .calendar {
     display: grid;
-    grid-template-columns: repeat(7, 1fr);
+    grid-template-columns: repeat(7, minmax(120px, 1fr)); /* Wider columns */
     gap: 5px;
-    max-width: 100%;
+    max-width: max-content; /* Allow horizontal expansion */
     padding: 5px;
-    overflow: hidden;
+    overflow: visible;
 }
 
 .day {
     border: 1px solid var(--secondary-color);
     padding: 10px;
-    min-height: 60px;
+    min-height: 80px; /* Increased height for better readability */
     position: relative;
     box-shadow: var(--shadow);
     border-radius: 5px;
+    display: flex;
+    flex-direction: column;
+    justify-content: flex-start;
+    align-items: center;
 }
 
 .day select {
     display: block;
     margin: 5px auto;
-    width: 90%;
+    width: 100%; /* Expand dropdown to fill width */
     padding: 4px;
     border-radius: 3px;
+    font-size: 12px;
 }
 
 .header {
@@ -78,25 +90,29 @@ h1 {
     box-shadow: var(--shadow);
     text-align: center;
     border-radius: 5px;
+    font-size: 12px;
 }
 
 .date {
     font-weight: bold;
-    position: absolute;
-    top: 3px;
-    right: 3px;
+    position: relative;
+    top: 0;
+    right: 0;
+    font-size: 14px;
+    margin-bottom: 2px;
+    align-self: flex-start;
+    padding-left: 4px;
 }
 
 /* Responsive Design */
 @media (max-width: 768px) {
     .calendar {
-        grid-template-columns: repeat(7, 1fr);
+        grid-template-columns: repeat(7, minmax(110px, 1fr));
         gap: 3px;
     }
     .day {
-        min-height: 50px;
-        min-width: 50px;
-        padding: 1px;
+        min-height: 70px;
+        padding: 5px;
     }
     .header {
         padding: 5px;
@@ -108,11 +124,11 @@ h1 {
 
 @media (max-width: 480px) {
     .calendar {
-        grid-template-columns: repeat(7, 1fr);
+        grid-template-columns: repeat(7, minmax(100px, 1fr));
         gap: 2px;
     }
     .day {
-        min-height: 40px;
+        min-height: 60px;
     }
     .header {
         padding: 4px;
