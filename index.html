@@ -101,6 +101,29 @@
             }
         }
 
+        function updateDayStyles() {
+            document.querySelectorAll('.day').forEach(dayDiv => {
+                const selects = dayDiv.querySelectorAll('select');
+                let selectedCount = 0;
+        
+                selects.forEach(select => {
+                    if (select.value !== "") {
+                        select.style.backgroundColor = "#fff49b"; // Yellow for selected dropdowns
+                        selectedCount++;
+                    } else {
+                        select.style.backgroundColor = ""; // Reset if empty
+                    }
+                });
+        
+                if (selectedCount === selects.length) {
+                    dayDiv.style.backgroundColor = "#ffcc80"; // Orange when all slots are filled
+                } else {
+                    dayDiv.style.backgroundColor = ""; // Reset otherwise
+                }
+            });
+        }
+        
+        // Modify saveTimeOff() to call updateDayStyles()
         async function saveTimeOff(day, index, select) {
             try {
                 const name = select.value;
@@ -109,6 +132,8 @@
                 console.log("Saving time-off data to Firestore:", timeOffData);
                 await setDoc(doc(db, "timeOff", "mentors"), timeOffData);
                 console.log("Successfully saved!");
+        
+                updateDayStyles(); // Call this after saving to adjust colors
             } catch (error) {
                 console.error("Error saving time-off data:", error);
             }
@@ -142,6 +167,7 @@
                 timeOffData = doc.data();
                 console.log("Live Update - Time Off Data:", timeOffData);
                 createCalendar();
+                setTimeout(updateDayStyles, 100); // Delay to ensure DOM updates first
             }
         });
         
