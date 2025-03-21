@@ -140,18 +140,23 @@
             });
         }
         
-        async function createBackup(data) {
+        async function createBackup(data, suffix = "auto") {
             try {
-                const backupsRef = collection(db, "timeOff", "backups", "snapshots");
-                await addDoc(backupsRef, {
-                    timestamp: serverTimestamp(),
+                const timestamp = new Date().toISOString().replace(/[:.]/g, "-");
+                const backupId = `backup-${timestamp}`; // backup-2025-04-05T14-33-00-123Z-auto
+        
+                const backupRef = doc(db, "timeOff", "backups", "snapshots", backupId);
+                await setDoc(backupRef, {
+                    timestamp: new Date(),
+                    type: suffix,
                     data: structuredClone(data)
                 });
-                console.log("Backup created");
+        
+                console.log("Backup created:", backupId);
             } catch (error) {
                 console.error("Failed to create backup:", error);
             }
-        }
+        }        
 
         async function saveTimeOff(day, index, select) {
             const name = select.value;
