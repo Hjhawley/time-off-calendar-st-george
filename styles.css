@@ -144,6 +144,33 @@ h2 {
     white-space: pre-wrap;
 }
 
+.toast {
+    position: fixed;
+    bottom: 20px;
+    left: 50%;
+    transform: translateX(-50%);
+    background-color: var(--secondary-color);
+    color: white;
+    padding: 10px 20px;
+    border-radius: 8px;
+    box-shadow: var(--shadow);
+    font-weight: 500;
+    font-size: 14px;
+    z-index: 9999;
+    opacity: 0;
+    transition: opacity 0.3s ease, transform 0.3s ease;
+    pointer-events: none;
+}
+
+.toast.show {
+    opacity: 1;
+    transform: translateX(-50%) translateY(0);
+}
+
+.toast.hidden {
+    display: none;
+}
+
 /* Responsive Design */
 @media (max-width: 768px) {
     .calendar {
