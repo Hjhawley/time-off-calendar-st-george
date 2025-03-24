@@ -20,6 +20,7 @@
         <div id="calendar" class="calendar"></div>
         <button onclick="generateReport()">Generate Strings</button>
         <pre id="report"></pre>
+        <button onclick="clearAll()">Clear All</button>
         <div id="toast" class="toast hidden"></div>
     </div>
 
@@ -38,7 +39,7 @@
 
         const mentors = ["Alexie", "Avree", "Bella", "Brooke", "Elle", "Emma", "Michael", "Mitch", "Sam"];
         let timeOffData = {};
-        const targetMonth = 3; // Edit month here; 0 index so 3 is April
+        const targetMonth = 4; // Edit month here; 0 index so 3 is April
         const targetYear = 2025;
 
         function showToast(message, duration = 2000) {
@@ -211,8 +212,29 @@
             console.log("Generated report:", report);
             document.getElementById("report").textContent = report;
         }
+        window.generateReport = generateReport;  
+
+        async function clearAll() {
+            const password = prompt("Enter your name to confirm:");
+            if (password !== "Hayden") {
+                showToast("Incorrect.");
+                return;
+            }
         
-        window.generateReport = generateReport;        
+            if (!confirm("Are you sure you want to clear all entries?")) return;
+        
+            try {
+                await createBackup(timeOffData, "manual-clear");
+                timeOffData = {};
+                await setDoc(doc(db, "timeOff", "mentors"), timeOffData);
+                showToast("All entries cleared.");
+                createCalendar();
+            } catch (error) {
+                console.error("Failed to clear all data:", error);
+                showToast("Failed to clear.");
+            }
+        }        
+        window.clearAll = clearAll;      
         
         onSnapshot(doc(db, "timeOff", "mentors"), (doc) => {
             if (doc.exists()) {
