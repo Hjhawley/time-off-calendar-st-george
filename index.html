@@ -37,9 +37,9 @@
         const db = getFirestore(app);
         console.log("Firestore Initialized:", db);
 
-        const mentors = ["Alexie", "Avree", "Bella", "Brooke", "Elle", "Emma", "Michael", "Mitch", "Sam"];
+        const mentors = ["Alexie", "Avree", "Brooke", "Elle", "Emma", "Michael", "Mitch", "Sam"];
         let timeOffData = {};
-        const targetMonth = 4; // Edit month here; 0 index so 3 is April
+        const targetMonth = 4; // Edit month here; 0 index so 4 is May
         const targetYear = 2025;
 
         function showToast(message, duration = 2000) {
@@ -52,7 +52,7 @@
                 toast.classList.remove("show");
                 setTimeout(() => {
                     toast.classList.add("hidden");
-                }, 300); // Allow fade-out to finish before hiding
+                }, 300);
             }, duration);
         }        
         
@@ -127,7 +127,7 @@
         
                 selects.forEach(select => {
                     if (select.value !== "") {
-                        select.style.backgroundColor = "#fff49b"; // Yellow for selected dropdowns
+                        select.style.backgroundColor = "#fff49b";
                         selectedCount++;
                     } else {
                         select.style.backgroundColor = ""; // Reset if empty
@@ -135,9 +135,9 @@
                 });
         
                 if (selectedCount === selects.length) {
-                    dayDiv.style.backgroundColor = "#ffcc80"; // Orange when all slots are filled
+                    dayDiv.style.backgroundColor = "#ffcc80";
                 } else {
-                    dayDiv.style.backgroundColor = ""; // Reset otherwise
+                    dayDiv.style.backgroundColor = "";
                 }
             });
         }
