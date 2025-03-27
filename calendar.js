@@ -27,6 +27,8 @@ export async function createCalendar() {
     const calendar = document.getElementById("calendar");
     calendar.innerHTML = "";
 
+    document.getElementById("campus-name").textContent = `${CAMPUS_ID}`;
+
     const monthNames = ["January", "February", "March", "April", "May", "June", "July", "August", "September", "October", "November", "December"];
     document.getElementById("month-name").textContent = `${monthNames[targetMonth]} ${targetYear}`;
 
