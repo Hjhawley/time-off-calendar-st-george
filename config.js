@@ -6,3 +6,5 @@ export const firebaseConfig = {
     messagingSenderId: "959934939505",
     appId: "1:959934939505:web:2883b8fed3506adba076d0"
 };
+
+export const CAMPUS_ID = "St. George"; // Change to "Raleigh" for the east coast

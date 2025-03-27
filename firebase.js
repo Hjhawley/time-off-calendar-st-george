@@ -2,7 +2,7 @@ import { initializeApp } from "https://www.gstatic.com/firebasejs/10.7.0/firebas
 import {
     getFirestore, doc, setDoc, getDoc, onSnapshot, collection
 } from "https://www.gstatic.com/firebasejs/10.7.0/firebase-firestore.js";
-import { firebaseConfig } from "./config.js";
+import { firebaseConfig, CAMPUS_ID } from "./config.js";
 
 console.log("Firebase Config Loaded:", firebaseConfig);
 
@@ -18,12 +18,13 @@ export { db, doc, setDoc, getDoc, onSnapshot };
 export async function createBackup(data, suffix = "auto") {
     try {
         const timestamp = new Date().toISOString().replace(/[:.]/g, "-");
-        const backupId = `backup-${timestamp}`;
+        const backupId = `backup-${timestamp}-${CAMPUS_ID}`;
 
-        const backupRef = doc(db, "timeOff", "backups", "snapshots", backupId);
+        const backupRef = doc(db, "timeOff", CAMPUS_ID, "backups", backupId);
         await setDoc(backupRef, {
             timestamp: new Date(),
             type: suffix,
+            campus: CAMPUS_ID,
             data: structuredClone(data)
         });
 

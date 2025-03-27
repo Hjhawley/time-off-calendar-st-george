@@ -1,4 +1,5 @@
 import { db, doc, setDoc, getDoc, onSnapshot, createBackup } from './firebase.js';
+import { CAMPUS_ID } from './config.js';
 import { showToast, updateDayStyles } from './ui.js';
 
 const mentors = ["Alexie", "Avree", "Brooke", "Elle", "Emma", "Michael", "Mitch", "Sam"];
@@ -8,9 +9,9 @@ const targetYear = 2025;
 
 async function loadTimeOffData() {
     try {
-        const docSnap = await getDoc(doc(db, "timeOff", "mentors"));
+        const docSnap = await getDoc(doc(db, "timeOff", CAMPUS_ID));
         if (docSnap.exists()) {
-            timeOffData = docSnap.data();
+            timeOffData = docSnap.data()?.mentors || {};
             console.log("Loaded Time Off Data:", timeOffData);
         } else {
             console.warn("No Time Off Data Found");
@@ -88,7 +89,7 @@ async function saveTimeOff(day, index, select) {
         if (!timeOffData[day]) timeOffData[day] = Array(4).fill("");
         timeOffData[day][index] = name;
 
-        await setDoc(doc(db, "timeOff", "mentors"), timeOffData);
+        await setDoc(doc(db, "timeOff", CAMPUS_ID), { mentors: timeOffData });
         await createBackup(timeOffData);
 
         showToast("Saved!");
@@ -130,7 +131,7 @@ export async function clearAll() {
     try {
         await createBackup(timeOffData, "manual-clear");
         timeOffData = {};
-        await setDoc(doc(db, "timeOff", "mentors"), timeOffData);
+        await setDoc(doc(db, "timeOff", CAMPUS_ID), { mentors: timeOffData });
         showToast("All entries cleared.");
         createCalendar();
     } catch (error) {
@@ -139,9 +140,9 @@ export async function clearAll() {
     }
 }
 
-onSnapshot(doc(db, "timeOff", "mentors"), (docSnap) => {
+onSnapshot(doc(db, "timeOff", CAMPUS_ID), (docSnap) => {
     if (docSnap.exists()) {
-        timeOffData = docSnap.data();
+        timeOffData = docSnap.data()?.mentors || {};
         createCalendar();
     }
 });
