@@ -1,10 +1,24 @@
-import { db, doc, setDoc, getDoc, onSnapshot } from "./firebase.js";
-import { showToast, updateDayStyles } from "./ui.js";
+import { db, doc, setDoc, getDoc, onSnapshot, createBackup } from './firebase.js';
+import { showToast, updateDayStyles } from './ui.js';
 
 const mentors = ["Alexie", "Avree", "Brooke", "Elle", "Emma", "Michael", "Mitch", "Sam"];
 let timeOffData = {};
 const targetMonth = 4;
 const targetYear = 2025;
+
+async function loadTimeOffData() {
+    try {
+        const docSnap = await getDoc(doc(db, "timeOff", "mentors"));
+        if (docSnap.exists()) {
+            timeOffData = docSnap.data();
+            console.log("Loaded Time Off Data:", timeOffData);
+        } else {
+            console.warn("No Time Off Data Found");
+        }
+    } catch (error) {
+        console.error("Error loading time off data:", error);
+    }
+}
 
 export async function createCalendar() {
     await loadTimeOffData();
@@ -53,33 +67,8 @@ export async function createCalendar() {
 
         calendar.appendChild(dayDiv);
     }
-}
 
-async function loadTimeOffData() {
-    try {
-        const docSnap = await getDoc(doc(db, "timeOff", "mentors"));
-        if (docSnap.exists()) {
-            timeOffData = docSnap.data();
-        }
-    } catch (error) {
-        console.error("Error loading time off data:", error);
-    }
-}
-
-async function createBackup(data, suffix = "auto") {
-    try {
-        const timestamp = new Date().toISOString().replace(/[:.]/g, "-");
-        const backupId = `backup-${timestamp}`;
-
-        const backupRef = doc(db, "timeOff", "backups", "snapshots", backupId);
-        await setDoc(backupRef, {
-            timestamp: new Date(),
-            type: suffix,
-            data: structuredClone(data)
-        });
-    } catch (error) {
-        console.error("Failed to create backup:", error);
-    }
+    updateDayStyles();
 }
 
 async function saveTimeOff(day, index, select) {
@@ -98,8 +87,10 @@ async function saveTimeOff(day, index, select) {
     try {
         if (!timeOffData[day]) timeOffData[day] = Array(4).fill("");
         timeOffData[day][index] = name;
+
         await setDoc(doc(db, "timeOff", "mentors"), timeOffData);
         await createBackup(timeOffData);
+
         showToast("Saved!");
         updateDayStyles();
     } catch (error) {
@@ -129,7 +120,7 @@ export function generateReport() {
 
 export async function clearAll() {
     const password = prompt("Enter your name to confirm:");
-    if (password !== "Hayden") {
+    if (password?.trim().toLowerCase() !== "hayden") {
         showToast("Incorrect.");
         return;
     }
@@ -152,6 +143,5 @@ onSnapshot(doc(db, "timeOff", "mentors"), (docSnap) => {
     if (docSnap.exists()) {
         timeOffData = docSnap.data();
         createCalendar();
-        setTimeout(updateDayStyles, 100);
     }
 });

@@ -9,13 +9,11 @@
 </head>
 <body>
 
-    <!-- Fixed Header -->
     <div class="header-container">
         <h1>Night Mentor Time-Off Calendar</h1>
         <h2 id="month-name"></h2>
     </div>
 
-    <!-- Calendar Wrapper (to avoid overlap with header) -->
     <div class="calendar-container">
         <div id="calendar" class="calendar"></div>
         <button onclick="generateReport()">Generate Strings</button>
@@ -25,227 +23,13 @@
     </div>
 
     <script type="module">
-        import { initializeApp } from "https://www.gstatic.com/firebasejs/10.7.0/firebase-app.js";
-        import { getFirestore, doc, setDoc, getDoc, onSnapshot } from "https://www.gstatic.com/firebasejs/10.7.0/firebase-firestore.js";
-        import { firebaseConfig } from "./config.js";
-        import { collection, addDoc, serverTimestamp } from "https://www.gstatic.com/firebasejs/10.7.0/firebase-firestore.js";
-
-        console.log("Firebase Config Loaded:", firebaseConfig);
-
-        const app = initializeApp(firebaseConfig);
-        console.log("Firebase App Initialized:", app);
-        const db = getFirestore(app);
-        console.log("Firestore Initialized:", db);
-
-        const mentors = ["Alexie", "Avree", "Brooke", "Elle", "Emma", "Michael", "Mitch", "Sam"];
-        let timeOffData = {};
-        const targetMonth = 4; // Edit month here; 0 index so 4 is May
-        const targetYear = 2025;
-
-        function showToast(message, duration = 2000) {
-            const toast = document.getElementById("toast");
-            toast.textContent = message;
-            toast.classList.remove("hidden");
-            toast.classList.add("show");
-        
-            setTimeout(() => {
-                toast.classList.remove("show");
-                setTimeout(() => {
-                    toast.classList.add("hidden");
-                }, 300);
-            }, duration);
-        }        
-        
-        async function loadTimeOffData() {
-            try {
-                const docSnap = await getDoc(doc(db, "timeOff", "mentors"));
-                if (docSnap.exists()) {
-                    timeOffData = docSnap.data();
-                    console.log("Loaded Time Off Data:", timeOffData);
-                } else {
-                    console.warn("No Time Off Data Found");
-                }
-            } catch (error) {
-                console.error("Error loading time off data:", error);
-            }
-        }
-        
-        async function createCalendar() {
-            await loadTimeOffData();
-            
-            const calendar = document.getElementById("calendar");
-            calendar.innerHTML = "";
-            
-            const monthNames = ["January", "February", "March", "April", "May", "June", "July", "August", "September", "October", "November", "December"];
-            document.getElementById("month-name").textContent = `${monthNames[targetMonth]} ${targetYear}`;
-            
-            const daysInMonth = new Date(targetYear, targetMonth + 1, 0).getDate();
-            const firstDay = new Date(targetYear, targetMonth, 1).getDay();
-            
-            const daysOfWeek = ["Sun", "Mon", "Tue", "Wed", "Thu", "Fri", "Sat"];
-            daysOfWeek.forEach(day => {
-                const header = document.createElement("div");
-                header.className = "header";
-                header.textContent = day;
-                calendar.appendChild(header);
-            });
-            
-            for (let i = 0; i < firstDay; i++) {
-                const emptyCell = document.createElement("div");
-                emptyCell.className = "empty";
-                calendar.appendChild(emptyCell);
-            }
-            
-            for (let day = 1; day <= daysInMonth; day++) {
-                const dayDiv = document.createElement("div");
-                dayDiv.className = "day";
-                
-                const dateLabel = document.createElement("div");
-                dateLabel.className = "date";
-                dateLabel.textContent = day;
-                dayDiv.appendChild(dateLabel);
-                
-                let slots_available = 4;
-                for (let i = 0; i < slots_available; i++) {
-                    const select = document.createElement("select");
-                    select.innerHTML = '<option value="">-</option>' + mentors.map(emp => `<option value="${emp}">${emp}</option>`).join("");
-                    select.onchange = () => saveTimeOff(day, i, select);
-                    if (timeOffData[day] && timeOffData[day][i] !== undefined) {
-                        select.value = timeOffData[day][i];
-                    }
-                    dayDiv.appendChild(select);
-                }
-                
-                calendar.appendChild(dayDiv);
-            }
-        }
-
-        function updateDayStyles() {
-            document.querySelectorAll('.day').forEach(dayDiv => {
-                const selects = dayDiv.querySelectorAll('select');
-                let selectedCount = 0;
-        
-                selects.forEach(select => {
-                    if (select.value !== "") {
-                        select.style.backgroundColor = "#fff49b";
-                        selectedCount++;
-                    } else {
-                        select.style.backgroundColor = ""; // Reset if empty
-                    }
-                });
-        
-                if (selectedCount === selects.length) {
-                    dayDiv.style.backgroundColor = "#ffcc80";
-                } else {
-                    dayDiv.style.backgroundColor = "";
-                }
-            });
-        }
-        
-        async function createBackup(data, suffix = "auto") {
-            try {
-                const timestamp = new Date().toISOString().replace(/[:.]/g, "-");
-                const backupId = `backup-${timestamp}`; // backup-2025-04-05T14-33-00-123Z-auto
-        
-                const backupRef = doc(db, "timeOff", "backups", "snapshots", backupId);
-                await setDoc(backupRef, {
-                    timestamp: new Date(),
-                    type: suffix,
-                    data: structuredClone(data)
-                });
-        
-                console.log("Backup created:", backupId);
-            } catch (error) {
-                console.error("Failed to create backup:", error);
-            }
-        }        
-
-        async function saveTimeOff(day, index, select) {
-            const name = select.value;
-            const dayDiv = select.parentElement;
-            const selects = dayDiv.querySelectorAll("select");
-        
-            let selectedMentors = new Set();
-            for (let i = 0; i < selects.length; i++) {
-                if (i !== index && selects[i].value === name && name !== "") {
-                    showToast(`${name} already claimed a slot for this day.`);
-                    select.value = ""; // Revert selection
-                    return;
-                }
-                if (selects[i].value !== "") {
-                    selectedMentors.add(selects[i].value);
-                }
-            }
-        
-            try {
-                if (!timeOffData[day]) timeOffData[day] = Array(4).fill("");
-                timeOffData[day][index] = name;
-                console.log("Saving time-off data to Firestore:", timeOffData);
-                await setDoc(doc(db, "timeOff", "mentors"), timeOffData);
-                await createBackup(timeOffData);
-                console.log("Saved!");
-                showToast("Saved!");
-        
-                updateDayStyles();
-            } catch (error) {
-                console.error("Error saving time-off data:", error);
-            }
-        }        
-
-        function generateReport() {
-            let report = "";
-            let mentorRequests = {};
-            
-            Object.keys(timeOffData).forEach(day => {
-                timeOffData[day].forEach(name => {
-                    if (name && name !== "") {
-                        if (!mentorRequests[name]) mentorRequests[name] = [];
-                        mentorRequests[name].push(day);
-                    }
-                });
-            });
-            
-            Object.keys(mentorRequests).forEach(name => {
-                report += `${name}: ${mentorRequests[name].join(", ")}\n`;
-            });
-            
-            console.log("Generated report:", report);
-            document.getElementById("report").textContent = report;
-        }
-        window.generateReport = generateReport;  
-
-        async function clearAll() {
-            const password = prompt("Enter your name to confirm:");
-            if (password !== "Hayden") {
-                showToast("Incorrect.");
-                return;
-            }
-        
-            if (!confirm("Are you sure you want to clear all entries?")) return;
-        
-            try {
-                await createBackup(timeOffData, "manual-clear");
-                timeOffData = {};
-                await setDoc(doc(db, "timeOff", "mentors"), timeOffData);
-                showToast("All entries cleared.");
-                createCalendar();
-            } catch (error) {
-                console.error("Failed to clear all data:", error);
-                showToast("Failed to clear.");
-            }
-        }        
-        window.clearAll = clearAll;      
-        
-        onSnapshot(doc(db, "timeOff", "mentors"), (doc) => {
-            if (doc.exists()) {
-                timeOffData = doc.data();
-                console.log("Live Update - Time Off Data:", timeOffData);
-                createCalendar();
-                setTimeout(updateDayStyles, 100); // Delay to ensure DOM updates first
-            }
-        });
-        
+        import { createCalendar, generateReport, clearAll } from './calendar.js';
+    
+        window.generateReport = generateReport;
+        window.clearAll = clearAll;
+    
         createCalendar();
     </script>
+    
 </body>
 </html>
