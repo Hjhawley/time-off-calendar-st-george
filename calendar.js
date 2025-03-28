@@ -3,9 +3,10 @@ import { CAMPUS_ID } from './config.js';
 import { showToast, updateDayStyles } from './ui.js';
 
 const mentors = ["Alexie", "Avree", "Brooke", "Elle", "Emma", "Michael", "Mitch", "Sam"];
-let timeOffData = {};
+const slotsAvailable = 4;
 const targetMonth = 4;
 const targetYear = 2025;
+let timeOffData = {};
 
 async function loadTimeOffData() {
     try {
@@ -58,7 +59,7 @@ export async function createCalendar() {
         dateLabel.textContent = day;
         dayDiv.appendChild(dateLabel);
 
-        for (let i = 0; i < 4; i++) {
+        for (let i = 0; i < slotsAvailable; i++) {
             const select = document.createElement("select");
             select.innerHTML = '<option value="">-</option>' + mentors.map(emp => `<option value="${emp}">${emp}</option>`).join("");
             select.onchange = () => saveTimeOff(day, i, select);
@@ -88,7 +89,7 @@ async function saveTimeOff(day, index, select) {
     }
 
     try {
-        if (!timeOffData[day]) timeOffData[day] = Array(4).fill("");
+        if (!timeOffData[day]) timeOffData[day] = Array(slotsAvailable).fill("");
         timeOffData[day][index] = name;
 
         await setDoc(doc(db, "timeOff", CAMPUS_ID), { mentors: timeOffData });
