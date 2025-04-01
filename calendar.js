@@ -2,9 +2,9 @@ import { db, doc, setDoc, getDoc, onSnapshot, createBackup } from './firebase.js
 import { CAMPUS_ID } from './config.js';
 import { showToast, updateDayStyles } from './ui.js';
 
-const mentors = ["Alexie", "Avree", "Brooke", "Elle", "Emma", "Mitch", "Sam"];
-const slotsAvailable = 4;
-const targetMonth = 4;
+const mentors = ["Alexie", "Avree", "Brooke", "Elle", "Emma", "Mitch"];
+const slotsAvailable = 3;
+const targetMonth = 4; // 4 = may
 const targetYear = 2025;
 let timeOffData = {};
 
