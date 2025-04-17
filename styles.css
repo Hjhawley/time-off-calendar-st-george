@@ -14,6 +14,8 @@
     --background-color: #d5dfe4;
     --foreground-color: #fff;
     --text-color: #000;
+    --select-highlight: #fff49b;
+    --day-complete: #ffcc80;
     --max-width: 1000px;
     --button-background: var(--primary-color);
     --button-hover-background: var(--secondary-color);
@@ -36,10 +38,12 @@ body {
 
 body.dark-mode {
     --primary-color: #1A2E86;
-    --secondary-color: #fd5;
+    --secondary-color: #42BFEF;
     --background-color: #252b31;
     --foreground-color: #2f3740;
     --text-color: #fff;
+    --select-highlight: #ffcc80;
+    --day-complete: #ff8080;
 }
 
 button, .button {
@@ -54,7 +58,7 @@ button, .button {
 }
 
 button:hover {
-    background-color: var(--button-hover-background);
+    background-color: var(--secondary-color);
 }
 
 .header-container {
@@ -114,7 +118,7 @@ h2 {
 }
 
 .day {
-    background-color: var(--background-color);
+    background-color: var(--foreground-color);
     color: var(--text-color);
     border: 2px solid var(--secondary-color);
     padding: 10px;
@@ -148,7 +152,7 @@ h2 {
 }
 
 #report {
-    background: var(--report-background);
+    background-color: var(--foreground-color);
     color: var(--text-color);
     border: 2px solid var(--secondary-color);
     border-radius: 10px;
