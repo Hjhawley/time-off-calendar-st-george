@@ -133,11 +133,23 @@ h2 {
 }
 
 .day select {
+    color: var(--text-color);
+    background-color: var(--background-color);
     display: block;
     margin: 5px auto;
     width: 100%;
     padding: 4px;
     border-radius: 3px;
+}
+
+.highlighted-select {
+    background-color: var(--select-highlight) !important;
+    transition: background-color 0.3s ease;
+}
+
+.day-complete {
+    background-color: var(--day-complete);
+    transition: background-color 0.3s ease;
 }
 
 .date {

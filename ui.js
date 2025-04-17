@@ -13,27 +13,23 @@ export function showToast(message, duration = 2000) {
 }
 
 export function updateDayStyles() {
-    const rootStyles = getComputedStyle(document.documentElement);
-    const selectHighlight = rootStyles.getPropertyValue('--select-highlight').trim();
-    const dayComplete = rootStyles.getPropertyValue('--day-complete').trim();
-
     document.querySelectorAll('.day').forEach(dayDiv => {
         const selects = dayDiv.querySelectorAll('select');
         let selectedCount = 0;
 
         selects.forEach(select => {
             if (select.value !== "") {
-                select.style.backgroundColor = selectHighlight;
+                select.classList.add('highlighted-select');
                 selectedCount++;
             } else {
-                select.style.backgroundColor = "";
+                select.classList.remove('highlighted-select');
             }
         });
 
         if (selectedCount === selects.length) {
-            dayDiv.style.backgroundColor = dayComplete;
+            dayDiv.classList.add('day-complete');
         } else {
-            dayDiv.style.backgroundColor = "";
+            dayDiv.classList.remove('day-complete');
         }
     });
 }
