@@ -240,3 +240,11 @@ h2 {
         padding: 4px;
     }
 }
+
+footer {
+    color: #888;
+    text-align: center;
+    margin-top: 10px;
+    padding-top: 10px;
+    font-size: 0.875em;
+}
