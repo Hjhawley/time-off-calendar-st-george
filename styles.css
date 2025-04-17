@@ -9,13 +9,16 @@
 }
 
 :root {
-    --max-width: 1000px;
     --primary-color: #42BFEF;
     --secondary-color: #1A2E86;
     --background-color: #d5dfe4;
+    --foreground-color: #fff;
     --text-color: #000;
+    --max-width: 1000px;
     --button-background: var(--primary-color);
     --button-hover-background: var(--secondary-color);
+    --report-background: var(--foreground-color);
+    --toast-background: var(--secondary-color);
     --shadow: 2px 4px 8px rgba(0, 0, 0, 0.25);
 }
 
@@ -28,29 +31,43 @@ body {
     padding: 10px;
     overflow-x: auto; /* Allow horizontal scrolling */
     white-space: nowrap;
+    transition: background-color 0.3s ease, color 0.3s ease;
+}
+
+body.dark-mode {
+    --primary-color: #1A2E86;
+    --secondary-color: #fd5;
+    --background-color: #252b31;
+    --foreground-color: #2f3740;
+    --text-color: #fff;
 }
 
 button, .button {
-    background-color: var(--button-background);
-    padding: 8px 12px;
+    background-color: var(--primary-color);
+    color: #eee;
     border: 2px solid var(--secondary-color);
+    padding: 8px 12px;
     border-radius: 5px;
     margin-top: 10px;
     cursor: pointer;
-    color: #fff;
     box-shadow: var(--shadow);
 }
 
+button:hover {
+    background-color: var(--button-hover-background);
+}
+
 .header-container {
+    background-color: var(--foreground-color);
+    color: var(--text-color);
+    border: 2px solid var(--secondary-color);
     top: 0;
     left: 0;
     width: 100%;
-    background-color: white;
     z-index: 1000;
     padding: 15px 0 10px 0;
     box-shadow: var(--shadow);
     text-align: center;
-    border: 2px solid var(--secondary-color);
     border-radius: 5px;
 }
 
@@ -97,7 +114,8 @@ h2 {
 }
 
 .day {
-    background-color: white;
+    background-color: var(--background-color);
+    color: var(--text-color);
     border: 2px solid var(--secondary-color);
     padding: 10px;
     min-height: 80px;
@@ -130,7 +148,8 @@ h2 {
 }
 
 #report {
-    background: white;
+    background: var(--report-background);
+    color: var(--text-color);
     border: 2px solid var(--secondary-color);
     border-radius: 10px;
     padding: 10px;
@@ -145,12 +164,12 @@ h2 {
 }
 
 .toast {
+    background-color: var(--secondary-color);
+    color: var(--background-color);
     position: fixed;
     bottom: 20px;
     left: 50%;
     transform: translateX(-50%);
-    background-color: var(--secondary-color);
-    color: white;
     padding: 10px 20px;
     border-radius: 8px;
     box-shadow: var(--shadow);
@@ -169,6 +188,13 @@ h2 {
 
 .toast.hidden {
     display: none;
+}
+
+.theme-toggle-container {
+    position: fixed;
+    bottom: 10px;
+    right: 10px;
+    z-index: 999;
 }
 
 /* Mobile */
