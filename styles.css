@@ -42,8 +42,8 @@ body.dark-mode {
     --background-color: #252b31;
     --foreground-color: #2f3740;
     --text-color: #fff;
-    --select-highlight: #ffcc80;
-    --day-complete: #ff8080;
+    --select-highlight: #e77d5d;
+    --day-complete: #911e1e;
 }
 
 button, .button {
