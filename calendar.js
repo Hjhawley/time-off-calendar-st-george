@@ -4,7 +4,7 @@ import { showToast, updateDayStyles } from './ui.js';
 
 const mentors = ["Alexie", "Avree", "Brooke", "Elle", "Emma", "Mitch"];
 const slotsAvailable = 3;
-const targetMonth = 4; // 4 = may
+const targetMonth = 5; // 5 = june
 const targetYear = 2025;
 let timeOffData = {};
 
