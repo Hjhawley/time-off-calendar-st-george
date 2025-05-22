@@ -3,7 +3,7 @@
 * {
     margin: 0;
     padding: 0;
-    box-sizing: border-box;
+    border-radius: 8px;
     font-weight: normal;
     font-size: 16px;
 }
@@ -17,11 +17,9 @@
     --select-highlight: #fff49b;
     --day-complete: #ffcc80;
     --max-width: 1000px;
-    --button-background: var(--primary-color);
-    --button-hover-background: var(--secondary-color);
     --report-background: var(--foreground-color);
     --toast-background: var(--secondary-color);
-    --shadow: 2px 4px 8px rgba(0, 0, 0, 0.25);
+    --shadow: 2px 4px 10px rgba(0, 0, 0, 0.7);
 }
 
 body {
@@ -49,22 +47,17 @@ body.dark-mode {
 button, .button {
     background-color: var(--primary-color);
     color: #eee;
-    border: 2px solid var(--secondary-color);
-    padding: 8px 12px;
-    border-radius: 5px;
-    margin-top: 10px;
+    border: 0;
+    border-radius: 25px;
+    padding: 12px;
+    margin: 12px;
     cursor: pointer;
     box-shadow: var(--shadow);
-}
-
-button:hover {
-    background-color: var(--secondary-color);
 }
 
 .header-container {
     background-color: var(--foreground-color);
     color: var(--text-color);
-    border: 2px solid var(--secondary-color);
     top: 0;
     left: 0;
     width: 100%;
@@ -72,7 +65,6 @@ button:hover {
     padding: 15px 0 10px 0;
     box-shadow: var(--shadow);
     text-align: center;
-    border-radius: 5px;
 }
 
 .calendar-container {
@@ -102,8 +94,6 @@ h2 {
     padding: 4px;
     box-shadow: var(--shadow);
     text-align: center;
-    border: 2px solid var(--secondary-color);
-    border-radius: 5px;
     font-size: 16px;
 }
 
@@ -120,12 +110,10 @@ h2 {
 .day {
     background-color: var(--foreground-color);
     color: var(--text-color);
-    border: 2px solid var(--secondary-color);
     padding: 10px;
     min-height: 80px;
     position: relative;
     box-shadow: var(--shadow);
-    border-radius: 5px;
     display: flex;
     flex-direction: column;
     justify-content: flex-start;
@@ -139,7 +127,6 @@ h2 {
     margin: 5px auto;
     width: 100%;
     padding: 4px;
-    border-radius: 3px;
 }
 
 .highlighted-select {
@@ -166,8 +153,6 @@ h2 {
 #report {
     background-color: var(--foreground-color);
     color: var(--text-color);
-    border: 2px solid var(--secondary-color);
-    border-radius: 10px;
     padding: 10px;
     margin-top: 10px;
     font-size: 14px;
@@ -187,7 +172,6 @@ h2 {
     left: 50%;
     transform: translateX(-50%);
     padding: 10px 20px;
-    border-radius: 8px;
     box-shadow: var(--shadow);
     font-weight: 500;
     font-size: 14px;
