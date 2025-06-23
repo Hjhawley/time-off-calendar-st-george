@@ -57,11 +57,9 @@ button, .button {
 .header-container {
     background-color: var(--foreground-color);
     color: var(--text-color);
-    top: 0;
-    left: 0;
     width: 1000px;
-    z-index: 1000;
-    padding: 15px 0 10px 0;
+    margin: 0 auto;
+    padding: 15px 0 10px;
     box-shadow: var(--shadow);
     text-align: center;
 }
