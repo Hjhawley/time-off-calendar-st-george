@@ -59,7 +59,7 @@ button, .button {
     color: var(--text-color);
     top: 0;
     left: 0;
-    width: 100%;
+    width: 1000px;
     z-index: 1000;
     padding: 15px 0 10px 0;
     box-shadow: var(--shadow);
