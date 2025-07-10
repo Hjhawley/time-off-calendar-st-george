@@ -43,25 +43,16 @@ body.dark-mode {
     --day-complete: #911e1e;
 }
 
-button, .button {
-    background-color: var(--primary-color);
-    color: #eee;
-    border: 0;
-    border-radius: 25px;
-    padding: 12px;
-    margin: 12px;
-    cursor: pointer;
-    box-shadow: var(--shadow);
-}
-
 .header-container {
     background-color: var(--foreground-color);
     color: var(--text-color);
     top: 0;
     left: 0;
-    width: 100%;
+    min-width: max-content;
+    max-width: 832px;
+    margin: auto;
     z-index: 1000;
-    padding: 15px 0 10px 0;
+    padding: 16px;
     box-shadow: var(--shadow);
     text-align: center;
 }
@@ -69,7 +60,6 @@ button, .button {
 .calendar-container {
     overflow-x: auto;
     width: 100%;
-    margin-top: 10px;
 }
 
 h1, h2, .header {
@@ -85,18 +75,20 @@ h1 {
 
 h2 {
     font-size: clamp(16px, 3vw, 20px);
-    margin: 5px 0;
+    margin: 8px 0;
     overflow: hidden;
 }
 
-.header {
-    font-weight: 500;
+.header, button, .button, #theme-toggle {
     color: white;
     background-color: var(--primary-color);
-    padding: 4px;
+    padding: 8px;
+    margin: 4px 0;
     box-shadow: var(--shadow);
     text-align: center;
     font-size: 16px;
+    border: none;
+    cursor: pointer;
 }
 
 .calendar {
@@ -157,12 +149,10 @@ h2 {
     background-color: var(--foreground-color);
     color: var(--text-color);
     padding: 10px;
-    margin-top: 10px;
+    margin: 8px auto;
     font-size: 14px;
     text-align: left;
     max-width: 400px;
-    margin-left: auto;
-    margin-right: auto;
     box-shadow: var(--shadow);
     white-space: pre-wrap;
 }
@@ -200,20 +190,6 @@ h2 {
     z-index: 1000;
 }
 
-#theme-toggle {
-    color: #eee;
-    background-color: var(--primary-color);
-    border: none;
-    padding: 12px;
-    margin: 12px;
-    border-radius: 25px;
-    cursor: pointer;
-    box-shadow: var(--shadow);
-    display: flex;
-    align-items: center;
-    justify-content: center;
-}
-
 footer {
     color: #888;
     text-align: center;
@@ -224,7 +200,7 @@ footer {
 
 @media (max-width: 480px) {
     .calendar {
-        grid-template-columns: repeat(7, minmax(110px, 1fr));
+        grid-template-columns: repeat(7, minmax(100px, 1fr));
         gap: 4px;
     }
     .day {
