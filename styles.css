@@ -18,7 +18,7 @@
     --day-complete: #ffcc80;
     --report-background: var(--foreground-color);
     --toast-background: var(--secondary-color);
-    --shadow: 2px 4px 10px rgba(0, 0, 0, 0.7);
+    --shadow: 2px 3px 5px rgba(0, 0, 0, 0.7);
 }
 
 body {
