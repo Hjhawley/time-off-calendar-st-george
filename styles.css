@@ -56,6 +56,7 @@ body.dark-mode {
 .calendar-container {
   overflow-x: auto;
   width: 100%;
+  margin: 0 0 1rem;
 }
 
 h1,
@@ -82,7 +83,7 @@ button,
   color: white;
   background-color: var(--primary-color);
   padding: 8px;
-  margin: 4px 0;
+  margin: .5rem 0;
   box-shadow: var(--shadow);
   text-align: center;
   font-size: 1.4rem;
@@ -149,7 +150,7 @@ button,
   background-color: var(--foreground-color);
   color: var(--text-color);
   padding: 1rem;
-  margin: 8px auto;
+  margin: 0 auto;
   font-size: 14px;
   text-align: left;
   max-width: 400px;
