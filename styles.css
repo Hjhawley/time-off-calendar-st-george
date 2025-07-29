@@ -1,28 +1,28 @@
-@import url('https://fonts.googleapis.com/css2?family=Poppins:ital,wght@0,100;0,200;0,400;0,500;0,600;0,700;0,800;0,900&display=swap');
+@import url('https://fonts.googleapis.com/css2?family=Open+Sans:ital,wght@0,100;0,200;0,400;0,500;0,600;0,700;0,800;0,900&display=swap');
 
 * {
     margin: 0;
     padding: 0;
     border-radius: 8px;
-    font-weight: normal;
+    font-weight: 600;
     font-size: 16px;
 }
 
 :root {
-    --primary-color: #42BFEF;
-    --secondary-color: #1A2E86;
-    --background-color: #d5dfe4;
+    --primary-color: #4be;
+    --secondary-color: #128;
+    --background-color: #ccc;
     --foreground-color: #fff;
-    --text-color: #000;
-    --select-highlight: #fff49b;
-    --day-complete: #ffcc80;
+    --text-color: #111;
+    --select-highlight: #ff9;
+    --day-complete: #fc8;
     --report-background: var(--foreground-color);
     --toast-background: var(--secondary-color);
-    --shadow: 2px 3px 5px rgba(0, 0, 0, 0.7);
+    --shadow: 1px 1px 3px rgba(0, 0, 0, 0.7);
 }
 
 body {
-    font-family: 'Poppins', sans-serif;
+    font-family: 'Open Sans', sans-serif;
     text-align: center;
     line-height: 1.4;
     background-color: var(--background-color);
@@ -34,13 +34,13 @@ body {
 }
 
 body.dark-mode {
-    --primary-color: #1A2E86;
-    --secondary-color: #42BFEF;
-    --background-color: #252b31;
-    --foreground-color: #2f3740;
+    --primary-color: #128;
+    --secondary-color: #4be;
+    --background-color: #111;
+    --foreground-color: #333;
     --text-color: #fff;
-    --select-highlight: #e77d5d;
-    --day-complete: #911e1e;
+    --select-highlight: #e64;
+    --day-complete: #911;
 }
 
 .header-container {
