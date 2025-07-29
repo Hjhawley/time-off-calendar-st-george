@@ -1,22 +1,21 @@
 <!DOCTYPE html>
 <html lang="en">
-<head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
     <title>Night Mentor Time-Off Calendar</title>
-    <link rel="stylesheet" href="styles.css">
-    <link rel="icon" type="image/png" sizes="32x32" href="favicon.png">
-</head>
-<body>
-
+    <link rel="stylesheet" href="styles.css" />
+    <link rel="icon" type="image/png" sizes="32x32" href="favicon.png" />
+  </head>
+  <body>
     <div class="header-container">
-        <h1>Night Shift Mentor Time-Off Calendar</h1>
-        <h2 id="campus-name"></h2>
-        <h2 id="month-name"></h2>
+      <h1>Night Shift Mentor Time-Off Calendar</h1>
+      <h2 id="campus-name"></h2>
+      <h2 id="month-name"></h2>
     </div>
 
     <div class="calendar-container">
-        <div id="calendar" class="calendar"></div>
+      <div id="calendar" class="calendar"></div>
     </div>
 
     <button onclick="generateReport()">Generate Strings</button>
@@ -25,20 +24,22 @@
     <div id="toast" class="toast hidden"></div>
 
     <script type="module">
-        import { createCalendar, generateReport, clearAll } from './calendar.js';
-    
-        window.generateReport = generateReport;
-        window.clearAll = clearAll;
-    
-        createCalendar();
+      import { createCalendar, generateReport, clearAll } from "./calendar.js";
+
+      window.generateReport = generateReport;
+      window.clearAll = clearAll;
+
+      createCalendar();
     </script>
 
     <footer>
-        <p>&copy; 2025 NeuroDev</p>
+      <p>&copy; 2025 NeuroDev</p>
     </footer>
     <div class="theme-toggle-container">
-        <button id="theme-toggle" class="button" aria-label="Theme / Dark Mode">Toggle Theme</button>
+      <button id="theme-toggle" class="button" aria-label="Theme / Dark Mode">
+        Toggle Theme
+      </button>
     </div>
     <script src="theme-toggle.js"></script>
-</body>
+  </body>
 </html>
