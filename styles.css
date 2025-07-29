@@ -1,215 +1,219 @@
-@import url('https://fonts.googleapis.com/css2?family=Open+Sans:ital,wght@0,100;0,200;0,400;0,500;0,600;0,700;0,800;0,900&display=swap');
+@import url("https://fonts.googleapis.com/css2?family=Open+Sans:ital,wght@0,100;0,200;0,400;0,500;0,600;0,700;0,800;0,900&display=swap");
 
 * {
-    margin: 0;
-    padding: 0;
-    border-radius: 8px;
-    font-weight: 600;
-    font-size: 16px;
+  margin: 0;
+  padding: 0;
+  border-radius: 8px;
+  font-weight: 600;
+  font-size: 16px;
 }
 
 :root {
-    --primary-color: #4be;
-    --secondary-color: #128;
-    --background-color: #ccc;
-    --foreground-color: #fff;
-    --text-color: #111;
-    --select-highlight: #ff9;
-    --day-complete: #fc8;
-    --report-background: var(--foreground-color);
-    --toast-background: var(--secondary-color);
-    --shadow: 1px 1px 3px rgba(0, 0, 0, 0.7);
+  --primary-color: #4be;
+  --secondary-color: #128;
+  --background-color: #ccc;
+  --foreground-color: #fff;
+  --text-color: #111;
+  --select-highlight: #ff9;
+  --day-complete: #fc8;
+  --report-background: var(--foreground-color);
+  --toast-background: var(--secondary-color);
+  --shadow: 1px 1px 3px rgba(0, 0, 0, 0.7);
 }
 
 body {
-    font-family: 'Open Sans', sans-serif;
-    text-align: center;
-    line-height: 1.4;
-    background-color: var(--background-color);
-    color: var(--text-color);
-    padding: 10px;
-    overflow-x: auto;
-
-    transition: background-color 0.3s ease, color 0.3s ease;
+  font-family: "Open Sans", sans-serif;
+  text-align: center;
+  line-height: 1.4;
+  background-color: var(--background-color);
+  color: var(--text-color);
+  padding: 10px;
+  overflow-x: auto;
+  transition: background-color 0.3s ease, color 0.3s ease;
 }
 
 body.dark-mode {
-    --primary-color: #128;
-    --secondary-color: #4be;
-    --background-color: #111;
-    --foreground-color: #333;
-    --text-color: #fff;
-    --select-highlight: #e64;
-    --day-complete: #911;
+  --primary-color: #128;
+  --secondary-color: #4be;
+  --background-color: #111;
+  --foreground-color: #333;
+  --text-color: #fff;
+  --select-highlight: #e75;
+  --day-complete: #911;
 }
 
 .header-container {
-    background-color: var(--foreground-color);
-    color: var(--text-color);
-    top: 0;
-    left: 0;
-    max-width: 832px;
-    margin: auto;
-    z-index: 1000;
-    padding: 16px;
-    box-shadow: var(--shadow);
-    text-align: center;
+  background-color: var(--foreground-color);
+  color: var(--text-color);
+  top: 0;
+  left: 0;
+  max-width: 832px;
+  margin: auto;
+  z-index: 1000;
+  padding: 16px;
+  box-shadow: var(--shadow);
+  text-align: center;
 }
 
 .calendar-container {
-    overflow-x: auto;
-    width: 100%;
+  overflow-x: auto;
+  width: 100%;
 }
 
-h1, h2, .header {
-    cursor: default;
+h1,
+h2,
+.header {
+  cursor: default;
 }
 
 h1 {
-    font-size: clamp(16px, 4vw, 32px);
-    margin: 20px, 0;
-    white-space: wrap;
-    overflow: hidden;
+  font-size: clamp(16px, 4vw, 32px);
+  margin: 20px, 0;
+  white-space: wrap;
+  overflow: hidden;
 }
 
 h2 {
-    font-size: clamp(16px, 3vw, 20px);
-    margin: 8px 0;
-    overflow: hidden;
+  font-size: clamp(16px, 3vw, 20px);
+  margin: 8px 0;
+  overflow: hidden;
 }
 
-.header, button, .button, #theme-toggle {
-    color: white;
-    background-color: var(--primary-color);
-    padding: 8px;
-    margin: 4px 0;
-    box-shadow: var(--shadow);
-    text-align: center;
-    font-size: 16px;
-    border: none;
-    cursor: pointer;
+.header,
+button,
+.button,
+#theme-toggle {
+  color: white;
+  background-color: var(--primary-color);
+  padding: 8px;
+  margin: 4px 0;
+  box-shadow: var(--shadow);
+  text-align: center;
+  font-size: 16px;
+  border: none;
+  cursor: pointer;
 }
 
 .calendar {
-    display: grid;
-    grid-template-columns: repeat(7, minmax(120px, 1fr));
-    gap: 5px;
-    max-width: max-content;
-    padding: 10px;
-    overflow: visible;
-    margin: auto;
+  display: grid;
+  grid-template-columns: repeat(7, minmax(120px, 1fr));
+  gap: 5px;
+  max-width: max-content;
+  padding: 10px;
+  overflow: visible;
+  margin: auto;
 }
 
 .day {
-    background-color: var(--foreground-color);
-    color: var(--text-color);
-    padding: 10px;
-    min-height: 80px;
-    position: relative;
-    box-shadow: var(--shadow);
-    display: flex;
-    flex-direction: column;
-    justify-content: flex-start;
-    align-items: center;
+  background-color: var(--foreground-color);
+  color: var(--text-color);
+  padding: 10px;
+  min-height: 80px;
+  position: relative;
+  box-shadow: var(--shadow);
+  display: flex;
+  flex-direction: column;
+  justify-content: flex-start;
+  align-items: center;
 }
 
 .day select {
-    color: var(--text-color);
-    background-color: var(--background-color);
-    display: block;
-    margin: 5px auto;
-    width: 100%;
-    padding: 4px;
-    cursor: pointer;
+  color: var(--text-color);
+  background-color: var(--background-color);
+  display: block;
+  margin: 5px auto;
+  width: 100%;
+  padding: 4px;
+  cursor: pointer;
 }
 
 .highlighted-select {
-    background-color: var(--select-highlight) !important;
-    transition: background-color 0.3s ease;
+  background-color: var(--select-highlight) !important;
+  transition: background-color 0.3s ease;
 }
 
 .day-complete {
-    background-color: var(--day-complete);
-    transition: background-color 0.3s ease;
+  background-color: var(--day-complete);
+  transition: background-color 0.3s ease;
 }
 
 .date {
-    font-weight: bold;
-    position: relative;
-    top: 0;
-    right: 0;
-    font-size: 14px;
-    margin-bottom: 2px;
-    align-self: flex-start;
-    padding-left: 4px;
+  font-weight: bold;
+  position: relative;
+  top: 0;
+  right: 0;
+  font-size: 14px;
+  margin-bottom: 2px;
+  align-self: flex-start;
+  padding-left: 4px;
 }
 
 #report {
-    background-color: var(--foreground-color);
-    color: var(--text-color);
-    padding: 10px;
-    margin: 8px auto;
-    font-size: 14px;
-    text-align: left;
-    max-width: 400px;
-    box-shadow: var(--shadow);
-    white-space: pre-wrap;
+  background-color: var(--foreground-color);
+  color: var(--text-color);
+  padding: 10px;
+  margin: 8px auto;
+  font-size: 14px;
+  text-align: left;
+  max-width: 400px;
+  box-shadow: var(--shadow);
+  white-space: pre-wrap;
 }
 
 .toast {
-    background-color: var(--secondary-color);
-    color: var(--background-color);
-    position: fixed;
-    bottom: 20px;
-    left: 50%;
-    transform: translateX(-50%);
-    padding: 10px 20px;
-    box-shadow: var(--shadow);
-    font-weight: 500;
-    font-size: 14px;
-    z-index: 9999;
-    opacity: 0;
-    transition: opacity 0.3s ease, transform 0.3s ease;
-    pointer-events: none;
+  background-color: var(--secondary-color);
+  color: var(--background-color);
+  position: fixed;
+  bottom: 20px;
+  left: 50%;
+  transform: translateX(-50%);
+  padding: 10px 20px;
+  box-shadow: var(--shadow);
+  font-weight: 500;
+  font-size: 14px;
+  z-index: 9999;
+  opacity: 0;
+  transition: opacity 0.3s ease, transform 0.3s ease;
+  pointer-events: none;
 }
 
 .toast.show {
-    opacity: 1;
-    transform: translateX(-50%) translateY(0);
+  opacity: 1;
+  transform: translateX(-50%) translateY(0);
 }
 
 .toast.hidden {
-    display: none;
+  display: none;
 }
 
 .theme-toggle-container {
-    position: fixed;
-    bottom: 10px;
-    right: 10px;
-    z-index: 1000;
+  position: fixed;
+  bottom: 10px;
+  right: 10px;
+  z-index: 1000;
 }
 
 footer {
-    color: #888;
-    text-align: center;
-    margin-top: 10px;
-    padding-top: 10px;
-    font-size: 0.875em;
+  color: #888;
+  text-align: center;
+  margin-top: 10px;
+  padding-top: 10px;
+  font-size: 0.875em;
 }
 
 @media (max-width: 480px) {
-    .calendar {
-        grid-template-columns: repeat(7, minmax(100px, 1fr));
-        gap: 4px;
-    }
-    .day {
-        min-height: 60px;
-    }
-    .header {
-        padding: 4px;
-    }
-    .theme-toggle-container {
-        bottom: 15px;
-        right: 15px;
-    }
+  .calendar {
+    grid-template-columns: repeat(7, minmax(100px, 1fr));
+    gap: 4px;
+  }
+  .day {
+    min-height: 60px;
+  }
+  .header {
+    padding: 4px;
+  }
+  .theme-toggle-container {
+    bottom: 15px;
+    right: 15px;
+  }
 }
