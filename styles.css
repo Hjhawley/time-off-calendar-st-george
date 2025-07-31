@@ -3,7 +3,7 @@
 * {
   margin: 0;
   padding: 0;
-  border-radius: 0.5rem;
+  border-radius: 0.25rem;
   font-weight: 500;
 }
 
@@ -27,7 +27,6 @@ body {
   background-color: var(--background-color);
   color: var(--text-color);
   padding: 1rem;
-  overflow-x: auto;
   transition: background-color 0.2s ease, color 0.2s ease;
 }
 
@@ -55,6 +54,8 @@ body.dark-mode {
 
 .calendar-container {
   overflow-x: auto;
+  overflow-y: visible;
+  padding-bottom: 8px;
   width: 100%;
   margin: 0 0 1rem;
 }
@@ -67,7 +68,6 @@ h2,
 
 h1 {
   font-size: clamp(16px, 4vw, 32px);
-  overflow: hidden;
 }
 
 h2 {
@@ -77,15 +77,23 @@ h2 {
 
 .header,
 button,
-.button,
-#theme-toggle {
+.button {
   color: white;
   background-color: var(--primary-color);
-  padding: 8px;
+  padding: 0.5rem 1rem;
   margin: 0.5rem 0;
   box-shadow: var(--shadow);
   text-align: center;
   font-size: 1.4rem;
+  border: none;
+  cursor: pointer;
+}
+#theme-toggle {
+  color: white;
+  background-color: var(--primary-color);
+  padding: 0.5rem 1rem;
+  box-shadow: var(--shadow);
+  font-size: 1.2rem;
   border: none;
   cursor: pointer;
 }
@@ -95,7 +103,6 @@ button,
   grid-template-columns: repeat(7, minmax(120px, 1fr));
   gap: 4px;
   max-width: max-content;
-  overflow: visible;
   margin: auto;
 }
 
@@ -185,8 +192,8 @@ button,
 
 .theme-toggle-container {
   position: fixed;
-  bottom: 1rem;
-  right: 1rem;
+  bottom: .75rem;
+  right: .75rem;
 }
 
 footer {
@@ -209,9 +216,5 @@ footer {
   }
   .header {
     padding: 1px;
-  }
-  .theme-toggle-container {
-    bottom: 15px;
-    right: 15px;
   }
 }
