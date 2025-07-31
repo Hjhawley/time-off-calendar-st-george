@@ -4,20 +4,20 @@
   margin: 0;
   padding: 0;
   border-radius: 0.5rem;
-  font-weight: 600;
+  font-weight: 500;
 }
 
 :root {
   --primary-color: #4be;
   --secondary-color: #128;
-  --background-color: #ccc;
+  --background-color: #ddd;
   --foreground-color: #fff;
   --text-color: #111;
   --select-highlight: #ff9;
   --day-complete: #fc8;
   --report-background: var(--foreground-color);
   --toast-background: var(--secondary-color);
-  --shadow: 1px 1px 3px rgba(0, 0, 0, 0.7);
+  --shadow: 2px 3px 5px #000b;
 }
 
 body {
@@ -48,7 +48,7 @@ body.dark-mode {
   left: 0;
   max-width: 850px;
   margin: 0.5rem auto;
-  padding: 16px;
+  padding: 1rem;
   box-shadow: var(--shadow);
   text-align: center;
 }
@@ -73,7 +73,6 @@ h1 {
 h2 {
   font-size: clamp(16px, 3vw, 20px);
   margin: 8px 0;
-  overflow: hidden;
 }
 
 .header,
