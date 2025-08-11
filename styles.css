@@ -88,15 +88,6 @@ button,
   border: none;
   cursor: pointer;
 }
-#theme-toggle {
-  color: white;
-  background-color: var(--primary-color);
-  padding: 0.5rem 1rem;
-  box-shadow: var(--shadow);
-  font-size: 1.2rem;
-  border: none;
-  cursor: pointer;
-}
 
 .calendar {
   display: grid;
