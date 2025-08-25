@@ -11,7 +11,7 @@ import { showToast, updateDayStyles } from "./ui.js";
 
 const mentors = ["Aidri B", "Alexie L", "Avree M", "Emma M", "HayLee S", "Michael C"];
 const slotsAvailable = mentors.length - 3;
-const targetMonth = 8; // 8 = september
+const targetMonth = 9; // 9 = october
 const targetYear = 2025;
 let timeOffData = {};
 
