@@ -9,7 +9,15 @@ import {
 import { CAMPUS_ID } from "./config.js";
 import { showToast, updateDayStyles } from "./ui.js";
 
-const mentors = ["Aidri B", "Avree M", "Emma M", "HayLee S", "Michael C", "Topher S", "Sofia D"];
+const mentors = [
+  "Aidri B",
+  "Avree M",
+  "Emma M",
+  "HayLee S",
+  "Michael C",
+  "Topher S",
+  "Sofia D",
+];
 const slotsAvailable = mentors.length - 3;
 const targetMonth = 9; // 9 = october
 const targetYear = 2025;
