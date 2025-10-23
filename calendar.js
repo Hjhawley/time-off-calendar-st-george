@@ -18,7 +18,7 @@ const mentors = [
   "Sofia D",
 ];
 const slotsAvailable = mentors.length - 3;
-const targetMonth = 10; // 10 = November
+const targetMonth = 11; // 11 = December
 const targetYear = 2025;
 let timeOffData = {};
 
