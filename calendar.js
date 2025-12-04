@@ -154,13 +154,18 @@ export function generateReport() {
 }
 
 export async function clearAll() {
-  const password = prompt("Enter your name to confirm:");
-  if (password?.trim().toLowerCase() !== "hayden") {
+  const password = prompt("Enter your name:");
+  if (!["hayden", "topher"].includes(password?.trim().toLowerCase())) {
     showToast("Incorrect.");
     return;
   }
 
-  if (!confirm("Are you sure you want to clear all entries?")) return;
+  if (
+    !confirm(
+      "Are you sure you want to clear all entries? This is a pain in the butt to undo."
+    )
+  )
+    return;
 
   try {
     await createBackup(timeOffData, "manual-clear");
