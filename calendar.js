@@ -18,8 +18,8 @@ const mentors = [
   "Sofia D",
 ];
 const slotsAvailable = mentors.length - 3;
-const targetMonth = 11; // 11 = December
-const targetYear = 2025;
+const targetMonth = 0; // 0 = Jan, 1 = Feb etc
+const targetYear = 2026;
 let timeOffData = {};
 
 async function loadTimeOffData() {
