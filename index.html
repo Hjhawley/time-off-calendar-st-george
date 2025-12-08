@@ -18,16 +18,14 @@
       <div id="calendar" class="calendar"></div>
     </div>
 
-    <button onclick="generateReport()">Generate Strings</button>
-    <pre id="report"></pre>
-    <button onclick="clearAll()">Clear All</button>
     <div id="toast" class="toast hidden"></div>
+    
+    <div class="admin-link-container">
+      <a href="admin.html" class="admin-link">Admin Portal</a>
+    </div>
 
     <script type="module">
-      import { createCalendar, generateReport, clearAll } from "./calendar.js";
-
-      window.generateReport = generateReport;
-      window.clearAll = clearAll;
+      import { createCalendar } from "./calendar.js";
 
       createCalendar();
     </script>

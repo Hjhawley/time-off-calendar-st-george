@@ -1,0 +1,174 @@
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Admin Portal - Mentor Scheduler</title>
+    <link rel="stylesheet" href="styles.css" />
+    <link rel="stylesheet" href="admin-styles.css" />
+    <link rel="icon" type="image/png" sizes="32x32" href="favicon.png" />
+  </head>
+  <body>
+    <!-- Login Modal -->
+    <div id="login-modal" class="modal">
+      <div class="modal-content">
+        <h2>Admin Login</h2>
+        <input
+          type="password"
+          id="admin-password"
+          placeholder="Enter admin password"
+          autocomplete="current-password"
+        />
+        <button onclick="handleLogin()">Login</button>
+        <p id="login-error" class="error-message"></p>
+      </div>
+    </div>
+
+    <!-- Main Admin Content -->
+    <div id="admin-content" style="display: none">
+      <div class="header-container">
+        <h1>Admin Portal - Mentor Scheduler</h1>
+        <div class="header-actions">
+          <a href="index.html" class="btn-secondary">Back to Calendar</a>
+          <button onclick="handleLogout()" class="btn-secondary">Logout</button>
+        </div>
+      </div>
+
+      <!-- Tabs -->
+      <div class="tabs">
+        <button class="tab-button active" onclick="showTab('mentor-management')">
+          Mentor Management
+        </button>
+        <button class="tab-button" onclick="showTab('schedule-generation')">
+          Generate Schedule
+        </button>
+        <button class="tab-button" onclick="showTab('view-schedule')">
+          View Schedule
+        </button>
+      </div>
+
+      <!-- Mentor Management Tab -->
+      <div id="mentor-management" class="tab-content active">
+        <h2>Mentor Information</h2>
+        <div class="mentor-controls">
+          <label for="mentor-select">Select Mentor:</label>
+          <select id="mentor-select" onchange="loadMentorInfo()">
+            <option value="new">+ Add New Mentor</option>
+          </select>
+        </div>
+
+        <div class="mentor-form">
+          <div class="form-group">
+            <label for="mentor-name">Name:</label>
+            <input type="text" id="mentor-name" />
+          </div>
+
+          <div class="form-group">
+            <label for="hours-wanted">Hours wanted per week:</label>
+            <input type="number" id="hours-wanted" min="0" max="80" />
+          </div>
+
+          <div class="form-group">
+            <label>Dates Unavailable (from Time-Off Calendar):</label>
+            <div id="hard-dates-display" class="dates-display"></div>
+          </div>
+
+          <div class="form-group">
+            <label>Weekdays Unavailable:</label>
+            <div class="checkbox-group" id="weekdays-unavailable">
+              <label><input type="checkbox" value="Sunday" /> Sunday</label>
+              <label><input type="checkbox" value="Monday" /> Monday</label>
+              <label><input type="checkbox" value="Tuesday" /> Tuesday</label>
+              <label><input type="checkbox" value="Wednesday" /> Wednesday</label>
+              <label><input type="checkbox" value="Thursday" /> Thursday</label>
+              <label><input type="checkbox" value="Friday" /> Friday</label>
+              <label><input type="checkbox" value="Saturday" /> Saturday</label>
+            </div>
+          </div>
+
+          <div class="form-group">
+            <label for="preferred-weekday">Prefers to work:</label>
+            <select id="preferred-weekday">
+              <option value="">None</option>
+              <option value="Sunday">Sunday</option>
+              <option value="Monday">Monday</option>
+              <option value="Tuesday">Tuesday</option>
+              <option value="Wednesday">Wednesday</option>
+              <option value="Thursday">Thursday</option>
+              <option value="Friday">Friday</option>
+              <option value="Saturday">Saturday</option>
+            </select>
+          </div>
+
+          <div class="form-actions">
+            <button onclick="saveMentorInfo()" class="btn-primary">
+              Save Mentor
+            </button>
+            <button onclick="deleteMentor()" class="btn-danger" id="delete-btn">
+              Delete Mentor
+            </button>
+          </div>
+        </div>
+      </div>
+
+      <!-- Schedule Generation Tab -->
+      <div id="schedule-generation" class="tab-content">
+        <h2>Generate Schedule</h2>
+        <div class="schedule-form">
+          <div class="form-group">
+            <label for="schedule-name">Schedule Name:</label>
+            <input type="text" id="schedule-name" placeholder="e.g., December 2025" />
+          </div>
+
+          <div class="form-group">
+            <label for="schedule-year">Year:</label>
+            <input type="number" id="schedule-year" min="2020" max="2100" />
+          </div>
+
+          <div class="form-group">
+            <label for="schedule-month">Month:</label>
+            <select id="schedule-month" onchange="updateHolidays()">
+              <option value="1">January</option>
+              <option value="2">February</option>
+              <option value="3">March</option>
+              <option value="4">April</option>
+              <option value="5">May</option>
+              <option value="6">June</option>
+              <option value="7">July</option>
+              <option value="8">August</option>
+              <option value="9">September</option>
+              <option value="10">October</option>
+              <option value="11">November</option>
+              <option value="12">December</option>
+            </select>
+          </div>
+
+          <div class="form-group">
+            <label for="holidays">Holidays (comma-separated dates):</label>
+            <input type="text" id="holidays" placeholder="e.g., 24,25,31" />
+          </div>
+
+          <div class="form-actions">
+            <button onclick="generateSchedule()" class="btn-primary btn-large">
+              Generate Schedule
+            </button>
+          </div>
+          
+          <div id="generation-status" class="status-message"></div>
+        </div>
+      </div>
+
+      <!-- View Schedule Tab -->
+      <div id="view-schedule" class="tab-content">
+        <h2>Current Schedule</h2>
+        <div id="schedule-info"></div>
+        <div id="schedule-display" class="schedule-calendar"></div>
+      </div>
+    </div>
+
+    <div id="toast" class="toast hidden"></div>
+
+    <script type="module" src="admin.js"></script>
+    <script src="theme-toggle.js"></script>
+  </body>
+</html>
