@@ -74,6 +74,7 @@
 .header-actions {
   display: flex;
   gap: 1rem;
+  align-items: center;
 }
 
 .btn-primary,
@@ -86,7 +87,11 @@
   cursor: pointer;
   transition: all 0.3s;
   text-decoration: none;
-  display: inline-block;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  line-height: 1.5;
+  height: fit-content;
 }
 
 .btn-primary {
@@ -224,6 +229,12 @@
   cursor: pointer;
 }
 
+.form-group label input[type="checkbox"] {
+  width: auto;
+  margin-right: 0.5rem;
+  cursor: pointer;
+}
+
 .form-actions {
   display: flex;
   gap: 1rem;
@@ -274,14 +285,30 @@
 }
 
 .schedule-header {
-  padding: 0.75rem;
+  padding: 0.75rem 0.5rem;
   text-align: center;
   font-weight: 600;
   border-right: 1px solid #6c757d;
+  display: flex;
+  flex-direction: column;
+  gap: 0.5rem;
 }
 
 .schedule-header:last-child {
   border-right: none;
+}
+
+.header-day-name {
+  font-weight: 700;
+  font-size: 1rem;
+}
+
+.header-shift-times {
+  font-weight: 400;
+  font-size: 0.7rem;
+  line-height: 1.3;
+  color: #6c757d;
+  white-space: pre-line;
 }
 
 .schedule-row {
@@ -323,13 +350,6 @@
 
 .schedule-shifts {
   font-size: 0.85rem;
-}
-
-.shift-times {
-  font-size: 0.75rem;
-  color: #6c757d;
-  margin-bottom: 0.5rem;
-  font-style: italic;
 }
 
 .schedule-shift {
