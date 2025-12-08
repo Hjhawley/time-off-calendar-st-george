@@ -120,6 +120,15 @@ async function loadData() {
 
     populateMentorSelect();
     
+    // Load calendar config
+    const configDoc = await getDoc(doc(db, "calendarConfig", CAMPUS_ID));
+    if (configDoc.exists()) {
+      const slots = configDoc.data()?.slotsAvailable || 3;
+      document.getElementById("slots-available").value = slots;
+    } else {
+      document.getElementById("slots-available").value = 3;
+    }
+    
     // Set current month and year
     const now = new Date();
     document.getElementById("schedule-year").value = now.getFullYear();
@@ -166,6 +175,7 @@ window.loadMentorInfo = function () {
     document.getElementById("hours-wanted").value = "";
     document.getElementById("hard-dates-display").textContent = "No dates selected";
     document.getElementById("preferred-weekday").value = "";
+    document.getElementById("auto-fill-calendar").checked = false;
     
     const checkboxes = document.querySelectorAll("#weekdays-unavailable input");
     checkboxes.forEach((cb) => (cb.checked = false));
@@ -185,6 +195,8 @@ window.loadMentorInfo = function () {
       mentor.preferred_weekdays && mentor.preferred_weekdays.length > 0 
         ? mentor.preferred_weekdays[0] 
         : "";
+    
+    document.getElementById("auto-fill-calendar").checked = mentor.auto_fill_calendar || false;
     
     const checkboxes = document.querySelectorAll("#weekdays-unavailable input");
     checkboxes.forEach((cb) => {
@@ -215,6 +227,7 @@ window.saveMentorInfo = async function () {
 
   const hoursWanted = parseInt(document.getElementById("hours-wanted").value) || 0;
   const preferredWeekday = document.getElementById("preferred-weekday").value;
+  const autoFillCalendar = document.getElementById("auto-fill-calendar").checked;
   
   const weekdays = [];
   const checkboxes = document.querySelectorAll("#weekdays-unavailable input:checked");
@@ -230,10 +243,17 @@ window.saveMentorInfo = async function () {
     hard_dates: hardDates,
     hours_wanted: hoursWanted,
     soft_dates: [],
+    auto_fill_calendar: autoFillCalendar,
   };
 
   try {
     await setDoc(doc(db, "mentorInfo", CAMPUS_ID), { mentors: mentorInfoData });
+    
+    // Auto-fill calendar if enabled
+    if (autoFillCalendar) {
+      await autoFillMentorDates(name, weekdays);
+    }
+    
     showToast("Mentor information saved successfully");
     populateMentorSelect();
     document.getElementById("mentor-select").value = name;
@@ -399,15 +419,35 @@ function displaySchedule() {
   const table = document.createElement("div");
   table.className = "schedule-table";
 
-  // Header row with days of week
+  // Header row with days of week and shift times
   const headerRow = document.createElement("div");
   headerRow.className = "schedule-header-row";
   
   const daysOfWeek = ["Sunday", "Monday", "Tuesday", "Wednesday", "Thursday", "Friday", "Saturday"];
+  const shiftTimesByDay = {
+    "Sunday": "A&B 1:00-10:00",
+    "Monday": "A&B 3:00-10:00\nC 3:00-8:00",
+    "Tuesday": "A&B 3:45-10:00\nC 3:45-8:00",
+    "Wednesday": "A&B 3:45-10:00",
+    "Thursday": "A&B 3:45-10:00\nC 3:45-8:00",
+    "Friday": "A&B 3:45-12:00\nC 3:45-8:00",
+    "Saturday": "A&B 1:00-12:00\nC 1:00-5:00"
+  };
+  
   daysOfWeek.forEach(day => {
     const header = document.createElement("div");
     header.className = "schedule-header";
-    header.textContent = day;
+    
+    const dayName = document.createElement("div");
+    dayName.className = "header-day-name";
+    dayName.textContent = day;
+    header.appendChild(dayName);
+    
+    const times = document.createElement("div");
+    times.className = "header-shift-times";
+    times.textContent = shiftTimesByDay[day];
+    header.appendChild(times);
+    
     headerRow.appendChild(header);
   });
   table.appendChild(headerRow);
@@ -446,16 +486,9 @@ function displaySchedule() {
     cell.appendChild(dateLabel);
 
     if (assignedDay) {
-      // Display shift information with time ranges
+      // Display shift information without time ranges (times are in header)
       const shiftsDiv = document.createElement("div");
       shiftsDiv.className = "schedule-shifts";
-      
-      // Add shift time info
-      const shiftTimes = getShiftTimes(assignedDay);
-      const timesDiv = document.createElement("div");
-      timesDiv.className = "shift-times";
-      timesDiv.textContent = shiftTimes;
-      shiftsDiv.appendChild(timesDiv);
       
       for (const [shift, mentor] of Object.entries(assignedDay.mentorsOnShift)) {
         if (mentor) {
@@ -519,32 +552,111 @@ function displaySchedule() {
   container.appendChild(summary);
 }
 
-function getShiftTimes(day) {
-  const dayName = day.getWeekdayName();
-  const shifts = day.shifts;
+// Auto-fill mentor dates on calendar
+async function autoFillMentorDates(mentorName, unavailableWeekdays) {
+  if (unavailableWeekdays.length === 0) return;
   
-  // Determine shift times based on available shifts
-  if (shifts.a_shift && shifts.b_shift && !shifts.c_shift) {
-    // Two shifts
-    if (dayName === "Sunday") {
-      return "A&B 1:00-10:00";
-    } else if (dayName === "Wednesday") {
-      return "A&B 3:45-10:00";
-    } else {
-      return "A&B 3:00-10:00 or 3:45-10:00";
-    }
-  } else if (shifts.c_shift) {
-    // Three shifts
-    if (dayName === "Monday") {
-      return "A&B 3:00-10:00, C 3:00-8:00";
-    } else if (dayName === "Saturday") {
-      return "A&B 1:00-12:00, C 1:00-5:00";
-    } else {
-      return "A&B 3:45-10:00/12:00, C 3:45-8:00";
+  // Use the same month/year as the employee calendar (January 2026)
+  const year = 2026;
+  const month = 0; // 0 = January
+  
+  const weekdayMap = {
+    "Sunday": 0,
+    "Monday": 1,
+    "Tuesday": 2,
+    "Wednesday": 3,
+    "Thursday": 4,
+    "Friday": 5,
+    "Saturday": 6
+  };
+  
+  // Get all dates in the month that match the unavailable weekdays
+  const daysInMonth = new Date(year, month + 1, 0).getDate();
+  const datesToFill = [];
+  
+  for (let day = 1; day <= daysInMonth; day++) {
+    const date = new Date(year, month, day);
+    const dayOfWeek = date.getDay();
+    
+    for (const weekday of unavailableWeekdays) {
+      if (weekdayMap[weekday] === dayOfWeek) {
+        datesToFill.push(day);
+        break;
+      }
     }
   }
   
-  return "";
+  // Update timeOffData for these dates
+  for (const day of datesToFill) {
+    if (!timeOffData[day]) {
+      timeOffData[day] = [];
+    }
+    
+    // Replace first slot with mentor name
+    if (timeOffData[day].length === 0) {
+      timeOffData[day] = [mentorName];
+    } else {
+      timeOffData[day][0] = mentorName;
+    }
+  }
+  
+  // Save to Firebase
+  await setDoc(doc(db, "timeOff", CAMPUS_ID), { mentors: timeOffData });
 }
+
+// Calendar Management Functions
+window.updateSlots = async function() {
+  const slots = parseInt(document.getElementById("slots-available").value);
+  if (isNaN(slots) || slots < 1 || slots > 10) {
+    showToast("Please enter a valid number between 1 and 10");
+    return;
+  }
+  
+  // Store slots configuration in Firebase
+  try {
+    await setDoc(doc(db, "calendarConfig", CAMPUS_ID), { slotsAvailable: slots });
+    showToast("Slots updated successfully. Refresh the main calendar page to see changes.");
+  } catch (error) {
+    console.error("Error updating slots:", error);
+    showToast("Error updating slots");
+  }
+};
+
+window.clearCalendar = async function() {
+  if (!confirm("Are you sure you want to clear ALL time-off entries? This will auto-fill based on mentors with auto-fill enabled.")) {
+    return;
+  }
+  
+  const statusDiv = document.getElementById("calendar-status");
+  statusDiv.textContent = "Clearing calendar...";
+  statusDiv.className = "status-message info";
+  statusDiv.style.display = "block";
+  
+  try {
+    // Clear all time-off data
+    timeOffData = {};
+    
+    // Auto-fill for mentors with auto-fill enabled
+    for (const [name, info] of Object.entries(mentorInfoData)) {
+      if (info.auto_fill_calendar && info.weekdays && info.weekdays.length > 0) {
+        await autoFillMentorDates(name, info.weekdays);
+      }
+    }
+    
+    // Save to Firebase
+    await setDoc(doc(db, "timeOff", CAMPUS_ID), { mentors: timeOffData });
+    
+    statusDiv.textContent = "Calendar cleared and auto-filled successfully!";
+    statusDiv.className = "status-message success";
+    
+    setTimeout(() => {
+      statusDiv.style.display = "none";
+    }, 3000);
+  } catch (error) {
+    console.error("Error clearing calendar:", error);
+    statusDiv.textContent = `Error: ${error.message}`;
+    statusDiv.className = "status-message error";
+  }
+};
 
 export { displaySchedule };

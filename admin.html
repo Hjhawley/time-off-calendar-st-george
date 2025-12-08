@@ -29,7 +29,7 @@
       <div class="header-container">
         <h1>Admin Portal - Mentor Scheduler</h1>
         <div class="header-actions">
-          <a href="index.html" class="btn-secondary">Back to Calendar</a>
+          <button onclick="window.location.href='index.html'" class="btn-secondary">Back to Calendar</button>
           <button onclick="handleLogout()" class="btn-secondary">Logout</button>
         </div>
       </div>
@@ -44,6 +44,9 @@
         </button>
         <button class="tab-button" onclick="showTab('view-schedule')">
           View Schedule
+        </button>
+        <button class="tab-button" onclick="showTab('calendar-management')">
+          Calendar Management
         </button>
       </div>
 
@@ -98,6 +101,13 @@
               <option value="Friday">Friday</option>
               <option value="Saturday">Saturday</option>
             </select>
+          </div>
+
+          <div class="form-group">
+            <label>
+              <input type="checkbox" id="auto-fill-calendar" />
+              Auto-fill this mentor's unavailable dates on employee calendar
+            </label>
           </div>
 
           <div class="form-actions">
@@ -163,6 +173,25 @@
         <h2>Current Schedule</h2>
         <div id="schedule-info"></div>
         <div id="schedule-display" class="schedule-calendar"></div>
+      </div>
+
+      <!-- Calendar Management Tab -->
+      <div id="calendar-management" class="tab-content">
+        <h2>Calendar Settings</h2>
+        
+        <div class="form-group">
+          <label for="slots-available">Number of time-off slots per day:</label>
+          <input type="number" id="slots-available" min="1" max="10" value="3" />
+          <button onclick="updateSlots()" class="btn-primary" style="margin-top: 10px;">Update Slots</button>
+        </div>
+
+        <div class="form-group" style="margin-top: 2rem;">
+          <h3>Clear Calendar Data</h3>
+          <p>This will clear all time-off entries from the employee calendar and auto-populate based on mentor settings with auto-fill enabled.</p>
+          <button onclick="clearCalendar()" class="btn-danger">Clear Calendar & Auto-Fill</button>
+        </div>
+
+        <div id="calendar-status" class="status-message"></div>
       </div>
     </div>
 
