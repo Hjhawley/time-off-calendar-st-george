@@ -123,16 +123,27 @@ async function loadData() {
     // Load calendar config
     const configDoc = await getDoc(doc(db, "calendarConfig", CAMPUS_ID));
     if (configDoc.exists()) {
-      const slots = configDoc.data()?.slotsAvailable || 3;
-      document.getElementById("slots-available").value = slots;
+      const config = configDoc.data();
+      document.getElementById("slots-available").value = config?.slotsAvailable || 3;
+      
+      const calendarMonth = config?.targetMonth !== undefined ? config.targetMonth : 0;
+      const calendarYear = config?.targetYear || 2026;
+      
+      // Set calendar management fields
+      document.getElementById("calendar-month").value = calendarMonth;
+      document.getElementById("calendar-year").value = calendarYear;
+      
+      // Default schedule generation to calendar month/year
+      document.getElementById("schedule-year").value = calendarYear;
+      document.getElementById("schedule-month").value = calendarMonth + 1; // Display months are 1-indexed
     } else {
       document.getElementById("slots-available").value = 3;
+      document.getElementById("calendar-month").value = 0;
+      document.getElementById("calendar-year").value = 2026;
+      document.getElementById("schedule-year").value = 2026;
+      document.getElementById("schedule-month").value = 1;
     }
     
-    // Set current month and year
-    const now = new Date();
-    document.getElementById("schedule-year").value = now.getFullYear();
-    document.getElementById("schedule-month").value = now.getMonth() + 1;
     updateHolidays();
   } catch (error) {
     console.error("Error loading data:", error);
@@ -252,6 +263,8 @@ window.saveMentorInfo = async function () {
     // Auto-fill calendar if enabled
     if (autoFillCalendar) {
       await autoFillMentorDates(name, weekdays);
+      // Save the updated timeOffData to Firebase
+      await setDoc(doc(db, "timeOff", CAMPUS_ID), { mentors: timeOffData });
     }
     
     showToast("Mentor information saved successfully");
@@ -556,9 +569,29 @@ function displaySchedule() {
 async function autoFillMentorDates(mentorName, unavailableWeekdays) {
   if (unavailableWeekdays.length === 0) return;
   
-  // Use the same month/year as the employee calendar (January 2026)
-  const year = 2026;
-  const month = 0; // 0 = January
+  // Map short names to full names used in calendar
+  const nameMap = {
+    "Aidri": "Aidri B",
+    "Avree": "Avree M",
+    "Emma": "Emma M",
+    "HayLee": "HayLee S",
+    "Michael": "Michael C",
+    "Sofia": "Sofia D",
+    "Topher": "Topher H"
+  };
+  
+  const fullName = nameMap[mentorName] || mentorName;
+  
+  // Load calendar config to get current month/year
+  const configDoc = await getDoc(doc(db, "calendarConfig", CAMPUS_ID));
+  let year = 2026;
+  let month = 0; // 0 = January
+  
+  if (configDoc.exists()) {
+    const config = configDoc.data();
+    year = config.targetYear || year;
+    month = config.targetMonth !== undefined ? config.targetMonth : month;
+  }
   
   const weekdayMap = {
     "Sunday": 0,
@@ -586,25 +619,59 @@ async function autoFillMentorDates(mentorName, unavailableWeekdays) {
     }
   }
   
+  console.log(`Auto-filling ${fullName} for dates:`, datesToFill);
+  
   // Update timeOffData for these dates
   for (const day of datesToFill) {
     if (!timeOffData[day]) {
       timeOffData[day] = [];
     }
     
-    // Replace first slot with mentor name
+    // Replace first slot with mentor name (use full name from calendar)
     if (timeOffData[day].length === 0) {
-      timeOffData[day] = [mentorName];
+      timeOffData[day] = [fullName];
     } else {
-      timeOffData[day][0] = mentorName;
+      timeOffData[day][0] = fullName;
     }
   }
-  
-  // Save to Firebase
-  await setDoc(doc(db, "timeOff", CAMPUS_ID), { mentors: timeOffData });
 }
 
 // Calendar Management Functions
+window.updateCalendarDate = async function() {
+  const month = parseInt(document.getElementById("calendar-month").value);
+  const year = parseInt(document.getElementById("calendar-year").value);
+  
+  if (isNaN(year) || year < 2020 || year > 2100) {
+    showToast("Please enter a valid year between 2020 and 2100");
+    return;
+  }
+  
+  try {
+    // Load existing config
+    const configDoc = await getDoc(doc(db, "calendarConfig", CAMPUS_ID));
+    const existingConfig = configDoc.exists() ? configDoc.data() : {};
+    
+    // Update with new month/year while preserving other settings
+    const updatedConfig = {
+      ...existingConfig,
+      targetMonth: month,
+      targetYear: year
+    };
+    
+    await setDoc(doc(db, "calendarConfig", CAMPUS_ID), updatedConfig);
+    
+    // Update the schedule generation defaults
+    document.getElementById("schedule-year").value = year;
+    document.getElementById("schedule-month").value = month + 1;
+    updateHolidays();
+    
+    showToast("Calendar date updated successfully. Refresh the main calendar page to see changes.");
+  } catch (error) {
+    console.error("Error updating calendar date:", error);
+    showToast("Error updating calendar date");
+  }
+};
+
 window.updateSlots = async function() {
   const slots = parseInt(document.getElementById("slots-available").value);
   if (isNaN(slots) || slots < 1 || slots > 10) {
@@ -612,9 +679,18 @@ window.updateSlots = async function() {
     return;
   }
   
-  // Store slots configuration in Firebase
   try {
-    await setDoc(doc(db, "calendarConfig", CAMPUS_ID), { slotsAvailable: slots });
+    // Load existing config
+    const configDoc = await getDoc(doc(db, "calendarConfig", CAMPUS_ID));
+    const existingConfig = configDoc.exists() ? configDoc.data() : {};
+    
+    // Update with new slots while preserving other settings
+    const updatedConfig = {
+      ...existingConfig,
+      slotsAvailable: slots
+    };
+    
+    await setDoc(doc(db, "calendarConfig", CAMPUS_ID), updatedConfig);
     showToast("Slots updated successfully. Refresh the main calendar page to see changes.");
   } catch (error) {
     console.error("Error updating slots:", error);
@@ -639,11 +715,14 @@ window.clearCalendar = async function() {
     // Auto-fill for mentors with auto-fill enabled
     for (const [name, info] of Object.entries(mentorInfoData)) {
       if (info.auto_fill_calendar && info.weekdays && info.weekdays.length > 0) {
+        console.log(`Auto-filling for ${name} with weekdays:`, info.weekdays);
         await autoFillMentorDates(name, info.weekdays);
       }
     }
     
-    // Save to Firebase
+    console.log("Final timeOffData:", timeOffData);
+    
+    // Save to Firebase (save once after all auto-fills)
     await setDoc(doc(db, "timeOff", CAMPUS_ID), { mentors: timeOffData });
     
     statusDiv.textContent = "Calendar cleared and auto-filled successfully!";

@@ -18,8 +18,8 @@ const mentors = [
   "Sofia D",
 ];
 let slotsAvailable = 3; // Default, will be loaded from Firebase
-const targetMonth = 0; // 0 = Jan, 1 = Feb etc
-const targetYear = 2026;
+let targetMonth = 0; // 0 = Jan, 1 = Feb etc, will be loaded from Firebase
+let targetYear = 2026; // Will be loaded from Firebase
 let timeOffData = {};
 
 async function loadTimeOffData() {
@@ -40,14 +40,21 @@ async function loadSlotsConfig() {
   try {
     const docSnap = await getDoc(doc(db, "calendarConfig", CAMPUS_ID));
     if (docSnap.exists()) {
-      slotsAvailable = docSnap.data()?.slotsAvailable || 3;
-      console.log("Loaded slots config:", slotsAvailable);
+      const config = docSnap.data();
+      slotsAvailable = config?.slotsAvailable || 3;
+      targetMonth = config?.targetMonth !== undefined ? config.targetMonth : 0;
+      targetYear = config?.targetYear || 2026;
+      console.log("Loaded calendar config:", { slotsAvailable, targetMonth, targetYear });
     } else {
       slotsAvailable = 3; // Default
+      targetMonth = 0; // January
+      targetYear = 2026; // Default
     }
   } catch (error) {
-    console.error("Error loading slots config:", error);
+    console.error("Error loading calendar config:", error);
     slotsAvailable = 3; // Default on error
+    targetMonth = 0;
+    targetYear = 2026;
   }
 }
 
