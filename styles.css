@@ -195,6 +195,31 @@ footer {
   font-size: 0.875em;
 }
 
+.admin-link-container {
+  text-align: center;
+  padding: 2rem;
+  margin-top: 2rem;
+  border-top: 2px solid var(--primary-color);
+}
+
+.admin-link {
+  display: inline-block;
+  padding: 0.75rem 1.5rem;
+  background-color: var(--secondary-color);
+  color: var(--foreground-color);
+  text-decoration: none;
+  border-radius: 4px;
+  font-weight: 600;
+  transition: all 0.3s;
+  box-shadow: var(--shadow);
+}
+
+.admin-link:hover {
+  background-color: var(--primary-color);
+  transform: translateY(-2px);
+  box-shadow: 2px 4px 4px #000b;
+}
+
 @media (max-width: 480px) {
   .calendar {
     grid-template-columns: repeat(7, minmax(80px, 1fr));
