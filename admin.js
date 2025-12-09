@@ -771,11 +771,10 @@ async function autoFillMentorDates(mentorName, unavailableWeekdays) {
       timeOffData[day] = [];
     }
 
-    // Replace first slot with mentor name
-    if (timeOffData[day].length === 0) {
-      timeOffData[day] = [mentorName];
-    } else {
-      timeOffData[day][0] = mentorName;
+    // Add mentor to next available slot (don't exceed slots limit)
+    // The slots limit will be checked when saving, but we should respect it during auto-fill
+    if (!timeOffData[day].includes(mentorName)) {
+      timeOffData[day].push(mentorName);
     }
   }
 }
