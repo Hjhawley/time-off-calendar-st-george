@@ -29,14 +29,22 @@
       <div class="header-container">
         <h1>Admin Portal - Mentor Scheduler</h1>
         <div class="header-actions">
-          <button onclick="window.location.href='index.html'" class="btn-secondary">Back to Calendar</button>
+          <button
+            onclick="window.location.href='index.html'"
+            class="btn-secondary"
+          >
+            Back to Calendar
+          </button>
           <button onclick="handleLogout()" class="btn-secondary">Logout</button>
         </div>
       </div>
 
       <!-- Tabs -->
       <div class="tabs">
-        <button class="tab-button active" onclick="showTab('mentor-management')">
+        <button
+          class="tab-button active"
+          onclick="showTab('mentor-management')"
+        >
           Mentor Management
         </button>
         <button class="tab-button" onclick="showTab('schedule-generation')">
@@ -82,7 +90,9 @@
               <label><input type="checkbox" value="Sunday" /> Sunday</label>
               <label><input type="checkbox" value="Monday" /> Monday</label>
               <label><input type="checkbox" value="Tuesday" /> Tuesday</label>
-              <label><input type="checkbox" value="Wednesday" /> Wednesday</label>
+              <label
+                ><input type="checkbox" value="Wednesday" /> Wednesday</label
+              >
               <label><input type="checkbox" value="Thursday" /> Thursday</label>
               <label><input type="checkbox" value="Friday" /> Friday</label>
               <label><input type="checkbox" value="Saturday" /> Saturday</label>
@@ -127,7 +137,11 @@
         <div class="schedule-form">
           <div class="form-group">
             <label for="schedule-name">Schedule Name:</label>
-            <input type="text" id="schedule-name" placeholder="e.g., December 2025" />
+            <input
+              type="text"
+              id="schedule-name"
+              placeholder="e.g., December 2025"
+            />
           </div>
 
           <div class="form-group">
@@ -163,7 +177,7 @@
               Generate Schedule
             </button>
           </div>
-          
+
           <div id="generation-status" class="status-message"></div>
         </div>
       </div>
@@ -178,7 +192,7 @@
       <!-- Calendar Management Tab -->
       <div id="calendar-management" class="tab-content">
         <h2>Calendar Settings</h2>
-        
+
         <div class="form-group">
           <label for="calendar-month">Calendar Month:</label>
           <select id="calendar-month">
@@ -199,21 +213,50 @@
 
         <div class="form-group">
           <label for="calendar-year">Calendar Year:</label>
-          <input type="number" id="calendar-year" min="2020" max="2100" value="2026" />
+          <input
+            type="number"
+            id="calendar-year"
+            min="2020"
+            max="2100"
+            value="2026"
+          />
         </div>
 
-        <button onclick="updateCalendarDate()" class="btn-primary" style="margin-bottom: 2rem;">Update Calendar Date</button>
+        <button
+          onclick="updateCalendarDate()"
+          class="btn-primary"
+          style="margin-bottom: 2rem"
+        >
+          Update Calendar Date
+        </button>
 
         <div class="form-group">
           <label for="slots-available">Number of time-off slots per day:</label>
-          <input type="number" id="slots-available" min="1" max="10" value="3" />
-          <button onclick="updateSlots()" class="btn-primary" style="margin-top: 10px;">Update Slots</button>
+          <input
+            type="number"
+            id="slots-available"
+            min="1"
+            max="10"
+            value="3"
+          />
+          <button
+            onclick="updateSlots()"
+            class="btn-primary"
+            style="margin-top: 10px"
+          >
+            Update Slots
+          </button>
         </div>
 
-        <div class="form-group" style="margin-top: 2rem;">
+        <div class="form-group" style="margin-top: 2rem">
           <h3>Clear Calendar Data</h3>
-          <p>This will clear all time-off entries from the employee calendar and auto-populate based on mentor settings with auto-fill enabled.</p>
-          <button onclick="clearCalendar()" class="btn-danger">Clear Calendar & Auto-Fill</button>
+          <p>
+            This will clear all time-off entries from the employee calendar and
+            auto-populate based on mentor settings with auto-fill enabled.
+          </p>
+          <button onclick="clearCalendar()" class="btn-danger">
+            Clear Calendar & Auto-Fill
+          </button>
         </div>
 
         <div id="calendar-status" class="status-message"></div>

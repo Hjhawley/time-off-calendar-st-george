@@ -1,11 +1,18 @@
 // JavaScript implementation of the Python scheduler logic
 
 class Mentor {
-  constructor(name, hoursWanted, hardDates, softDates, lenPay, preferredWeekdays = []) {
+  constructor(
+    name,
+    hoursWanted,
+    hardDates,
+    softDates,
+    lenPay,
+    preferredWeekdays = []
+  ) {
     this.name = name;
     this.hoursWanted = hoursWanted;
-    this.hardDates = hardDates.map(d => parseInt(d));
-    this.softDates = softDates.map(d => parseInt(d));
+    this.hardDates = hardDates.map((d) => parseInt(d));
+    this.softDates = softDates.map((d) => parseInt(d));
     this.hoursPay = 0;
     this.daysLeft = lenPay - hardDates.length;
     this.preferredWeekdays = preferredWeekdays;
@@ -34,13 +41,18 @@ class Day {
     };
     this.weekday = dateInfo.getDay();
     this.season = this.getSeason();
-    this.shifts = this.getShifts(this.season, this.weekday, seasonalShiftInfo, holidays);
+    this.shifts = this.getShifts(
+      this.season,
+      this.weekday,
+      seasonalShiftInfo,
+      holidays
+    );
     this.mentorsOnShift = {};
-    
+
     for (const shift in this.shifts) {
       this.mentorsOnShift[shift] = null;
     }
-    
+
     this.totalHours = Object.values(this.shifts).reduce((a, b) => a + b, 0);
     this.assignedHours = 0;
     this.potentialMentors = [];
@@ -51,7 +63,7 @@ class Day {
     const month = this.dateInfo.getMonth() + 1; // JS months are 0-indexed
     const summerMonths = [5, 6, 7];
     const winterMonths = [8, 9, 10, 11, 12, 1, 2, 3, 4];
-    
+
     if (summerMonths.includes(month)) {
       return "summer";
     } else if (winterMonths.includes(month)) {
@@ -62,14 +74,22 @@ class Day {
 
   getShifts(season, dayOfWeek, seasonalShiftInfo, holidays) {
     const day = this.dateInfo.getDate();
-    
+
     if (holidays.dates.includes(day)) {
       return { ...holidays.shift_info };
     }
 
-    const weekdayNames = ["Monday", "Tuesday", "Wednesday", "Thursday", "Friday", "Saturday", "Sunday"];
+    const weekdayNames = [
+      "Monday",
+      "Tuesday",
+      "Wednesday",
+      "Thursday",
+      "Friday",
+      "Saturday",
+      "Sunday",
+    ];
     const weekdayName = weekdayNames[dayOfWeek === 0 ? 6 : dayOfWeek - 1];
-    
+
     return { ...seasonalShiftInfo[season].shift_info[weekdayName] };
   }
 
@@ -78,7 +98,10 @@ class Day {
   }
 
   getAvailableMentorHours() {
-    return this.potentialMentors.reduce((sum, mentor) => sum + mentor.getAvailableHours(), 0);
+    return this.potentialMentors.reduce(
+      (sum, mentor) => sum + mentor.getAvailableHours(),
+      0
+    );
   }
 
   addPotentialMentor(mentor) {
@@ -93,7 +116,7 @@ class Day {
     for (const [shift, slot] of Object.entries(this.mentorsOnShift)) {
       if (slot === null) {
         const legalAdd = mentor.legalShiftAdd(this.shifts[shift]);
-        
+
         if (legalAdd) {
           this.mentorsOnShift[shift] = mentor;
           mentor.hoursPay += this.shifts[shift];
@@ -102,7 +125,9 @@ class Day {
         return false;
       }
     }
-    throw new Error("Tried to fill shift in full day, this should never happen");
+    throw new Error(
+      "Tried to fill shift in full day, this should never happen"
+    );
   }
 
   addLowestShift(mentor) {
@@ -131,7 +156,15 @@ class Day {
   }
 
   getWeekdayName() {
-    const days = ["Sunday", "Monday", "Tuesday", "Wednesday", "Thursday", "Friday", "Saturday"];
+    const days = [
+      "Sunday",
+      "Monday",
+      "Tuesday",
+      "Wednesday",
+      "Thursday",
+      "Friday",
+      "Saturday",
+    ];
     return days[this.dateInfo.getDay()];
   }
 }
@@ -153,9 +186,9 @@ class Schedule {
     this.seasonalShiftInfo = seasonalShiftInfo;
     this.mentorInfoData = mentorInfo;
     this.holidays = holidays;
-    
+
     const lenMonth = new Date(year, month, 0).getDate();
-    
+
     this.m1 = this.createMentorInfo(lenP1, "<=", lenP1);
     this.pay1 = this.createPayDays(
       this.m1,
@@ -163,9 +196,9 @@ class Schedule {
       new Date(year, month - 1, lenP1)
     );
     this.assignedDays = [];
-    
+
     this.assignAllShifts(this.pay1, this.m1);
-    
+
     this.m2 = this.createMentorInfo(lenMonth - lenP1, ">", lenP1);
     this.pay2 = this.createPayDays(
       this.m2,
@@ -173,14 +206,14 @@ class Schedule {
       new Date(year, month - 1, lenMonth),
       lenP1
     );
-    
+
     this.assignAllShifts(this.pay2, this.m2);
   }
 
   getDatesOfWeekday(day) {
     const lenMonth = new Date(this.year, this.month, 0).getDate();
     let idx = 0;
-    
+
     for (let i = 0; i < 7; i++) {
       const testDate = new Date(this.year, this.month - 1, i + 1);
       if (this.weekDayMap[day] === testDate.getDay()) {
@@ -188,7 +221,7 @@ class Schedule {
         break;
       }
     }
-    
+
     const dates = [];
     for (let d = idx; d <= lenMonth; d += 7) {
       dates.push(d);
@@ -222,13 +255,13 @@ class Schedule {
       }
       return resDates;
     } else if (behavior[0] === "Pe") {
-      return hardDates.filter(date => !allowedDates.includes(date));
+      return hardDates.filter((date) => !allowedDates.includes(date));
     } else if (behavior[0] === "Re") {
       const combined = [...new Set([...hardDates, ...allowedDates])];
       combined.sort((a, b) => a - b);
       return combined;
     }
-    
+
     throw new Error(`Got bad behavior keyword ${behavior}`);
   }
 
@@ -253,8 +286,10 @@ class Schedule {
         info.weekdays,
         info.weekday_behavior
       );
-      
-      cInfo.hard_dates = newDates.filter(date => this.getTruth(date, comparator, endDay));
+
+      cInfo.hard_dates = newDates.filter((date) =>
+        this.getTruth(date, comparator, endDay)
+      );
       cInfo.name = name;
       cInfo.hours_wanted = cInfo.hours_wanted * 2; // 2 weeks
       cInfo.len_pay = lenPay;
@@ -268,7 +303,7 @@ class Schedule {
         lenPay,
         cInfo.preferred_weekdays
       );
-      
+
       mentorList.push(mentor);
     }
 
@@ -281,7 +316,9 @@ class Schedule {
     const days = [];
 
     while (curDate <= endDate) {
-      days.push(new Day(new Date(curDate), this.seasonalShiftInfo, this.holidays));
+      days.push(
+        new Day(new Date(curDate), this.seasonalShiftInfo, this.holidays)
+      );
       curDate.setDate(curDate.getDate() + 1);
     }
 
@@ -302,12 +339,16 @@ class Schedule {
   }
 
   prioritizeDays(payDays) {
-    const totalAvailableDays = payDays.reduce((sum, day) => sum + day.getMentorDays(), 0);
-    
+    const totalAvailableDays = payDays.reduce(
+      (sum, day) => sum + day.getMentorDays(),
+      0
+    );
+
     for (const day of payDays) {
       const basePriority = day.getMentorDays() / (totalAvailableDays + 1);
 
-      if (day.dateInfo.getDay() === 6) { // Saturday
+      if (day.dateInfo.getDay() === 6) {
+        // Saturday
         day.priorityValue = -999999;
       } else {
         day.priorityValue = basePriority;
@@ -323,13 +364,18 @@ class Schedule {
   }
 
   filterSaturdayCandidates(candidates, currentDay, assignedDays) {
-    if (currentDay.dateInfo.getDay() !== 6 || currentDay.dateInfo.getDate() <= 7) {
+    if (
+      currentDay.dateInfo.getDay() !== 6 ||
+      currentDay.dateInfo.getDate() <= 7
+    ) {
       return candidates;
     }
 
     let previousSaturday = null;
-    const sortedDays = [...assignedDays].sort((a, b) => b.dateInfo - a.dateInfo);
-    
+    const sortedDays = [...assignedDays].sort(
+      (a, b) => b.dateInfo - a.dateInfo
+    );
+
     for (const day of sortedDays) {
       if (day.dateInfo.getDay() === 6 && day.dateInfo < currentDay.dateInfo) {
         previousSaturday = day;
@@ -342,10 +388,12 @@ class Schedule {
     }
 
     const mentorsLastSaturday = new Set(
-      Object.values(previousSaturday.mentorsOnShift).filter(m => m !== null)
+      Object.values(previousSaturday.mentorsOnShift).filter((m) => m !== null)
     );
 
-    const filtered = candidates.filter(mentor => !mentorsLastSaturday.has(mentor));
+    const filtered = candidates.filter(
+      (mentor) => !mentorsLastSaturday.has(mentor)
+    );
     return filtered.length > 0 ? filtered : candidates;
   }
 
@@ -354,12 +402,19 @@ class Schedule {
     let updateMentors = true;
     const dayName = day.getWeekdayName();
 
-    const preferredCandidates = day.potentialMentors.filter(
-      mentor => mentor.preferredWeekdays.includes(dayName)
+    const preferredCandidates = day.potentialMentors.filter((mentor) =>
+      mentor.preferredWeekdays.includes(dayName)
     );
-    
-    let candidates = preferredCandidates.length > 0 ? preferredCandidates : day.potentialMentors;
-    candidates = this.filterSaturdayCandidates(candidates, day, this.assignedDays);
+
+    let candidates =
+      preferredCandidates.length > 0
+        ? preferredCandidates
+        : day.potentialMentors;
+    candidates = this.filterSaturdayCandidates(
+      candidates,
+      day,
+      this.assignedDays
+    );
 
     let highestPrio = -100;
     let curMentor = null;
@@ -416,7 +471,10 @@ class Schedule {
     const mentorsToUpdate = [];
 
     if (mentorUpdate instanceof Mentor) {
-      if (mentorUpdate.daysLeft === 0 || mentorUpdate.getAvailableHours() <= 0) {
+      if (
+        mentorUpdate.daysLeft === 0 ||
+        mentorUpdate.getAvailableHours() <= 0
+      ) {
         mentorsToUpdate.push(mentorUpdate);
       }
     } else if (typeof mentorUpdate === "number") {
@@ -429,7 +487,7 @@ class Schedule {
 
     for (const day of payDays) {
       day.potentialMentors = day.potentialMentors.filter(
-        mentor => !mentorsToUpdate.includes(mentor)
+        (mentor) => !mentorsToUpdate.includes(mentor)
       );
     }
   }
@@ -446,7 +504,9 @@ class Schedule {
       unassignedDays = payDays.length;
     }
 
-    this.assignedDays.sort((a, b) => a.dateInfo.getDate() - b.dateInfo.getDate());
+    this.assignedDays.sort(
+      (a, b) => a.dateInfo.getDate() - b.dateInfo.getDate()
+    );
   }
 }
 

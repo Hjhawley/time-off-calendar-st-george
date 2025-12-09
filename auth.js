@@ -2,7 +2,8 @@
 const ADMIN_PASSWORD = "neurodev2025"; // Change this to your desired password
 
 export function checkAdminAuth() {
-  const isAuthenticated = sessionStorage.getItem("adminAuthenticated") === "true";
+  const isAuthenticated =
+    sessionStorage.getItem("adminAuthenticated") === "true";
   if (!isAuthenticated) {
     window.location.href = "index.html";
   }
