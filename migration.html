@@ -1,231 +1,247 @@
 <!DOCTYPE html>
 <html lang="en">
-<head>
-  <meta charset="UTF-8">
-  <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>Data Migration - Import Mentor Info</title>
-  <style>
-    body {
-      font-family: Arial, sans-serif;
-      max-width: 800px;
-      margin: 50px auto;
-      padding: 20px;
-      background-color: #f5f5f5;
-    }
-    .container {
-      background: white;
-      padding: 30px;
-      border-radius: 8px;
-      box-shadow: 0 2px 10px rgba(0,0,0,0.1);
-    }
-    h1 {
-      color: #333;
-      margin-bottom: 20px;
-    }
-    textarea {
-      width: 100%;
-      height: 400px;
-      padding: 10px;
-      border: 1px solid #ddd;
-      border-radius: 4px;
-      font-family: monospace;
-      font-size: 12px;
-      margin-bottom: 20px;
-    }
-    button {
-      background-color: #007bff;
-      color: white;
-      padding: 12px 24px;
-      border: none;
-      border-radius: 4px;
-      font-size: 16px;
-      cursor: pointer;
-      margin-right: 10px;
-    }
-    button:hover {
-      background-color: #0056b3;
-    }
-    button.danger {
-      background-color: #dc3545;
-    }
-    button.danger:hover {
-      background-color: #c82333;
-    }
-    .status {
-      margin-top: 20px;
-      padding: 15px;
-      border-radius: 4px;
-      display: none;
-    }
-    .status.success {
-      background-color: #d4edda;
-      color: #155724;
-      border: 1px solid #c3e6cb;
-      display: block;
-    }
-    .status.error {
-      background-color: #f8d7da;
-      color: #721c24;
-      border: 1px solid #f5c6cb;
-      display: block;
-    }
-    .info {
-      background-color: #d1ecf1;
-      color: #0c5460;
-      padding: 15px;
-      border-radius: 4px;
-      margin-bottom: 20px;
-    }
-    pre {
-      background-color: #f8f9fa;
-      padding: 10px;
-      border-radius: 4px;
-      overflow-x: auto;
-    }
-  </style>
-</head>
-<body>
-  <div class="container">
-    <h1>🔄 Mentor Info Migration Tool</h1>
-    
-    <div class="info">
-      <strong>Instructions:</strong>
-      <ol>
-        <li>The mentor data from your JSON file is already loaded below</li>
-        <li>Click "Import to Firebase" to add this data to your website</li>
-        <li>This will create/update the mentorInfo collection in Firebase</li>
-        <li>After successful import, you can delete this file</li>
-      </ol>
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Data Migration - Import Mentor Info</title>
+    <style>
+      body {
+        font-family: Arial, sans-serif;
+        max-width: 800px;
+        margin: 50px auto;
+        padding: 20px;
+        background-color: #f5f5f5;
+      }
+      .container {
+        background: white;
+        padding: 30px;
+        border-radius: 8px;
+        box-shadow: 0 2px 10px rgba(0, 0, 0, 0.1);
+      }
+      h1 {
+        color: #333;
+        margin-bottom: 20px;
+      }
+      textarea {
+        width: 100%;
+        height: 400px;
+        padding: 10px;
+        border: 1px solid #ddd;
+        border-radius: 4px;
+        font-family: monospace;
+        font-size: 12px;
+        margin-bottom: 20px;
+      }
+      button {
+        background-color: #007bff;
+        color: white;
+        padding: 12px 24px;
+        border: none;
+        border-radius: 4px;
+        font-size: 16px;
+        cursor: pointer;
+        margin-right: 10px;
+      }
+      button:hover {
+        background-color: #0056b3;
+      }
+      button.danger {
+        background-color: #dc3545;
+      }
+      button.danger:hover {
+        background-color: #c82333;
+      }
+      .status {
+        margin-top: 20px;
+        padding: 15px;
+        border-radius: 4px;
+        display: none;
+      }
+      .status.success {
+        background-color: #d4edda;
+        color: #155724;
+        border: 1px solid #c3e6cb;
+        display: block;
+      }
+      .status.error {
+        background-color: #f8d7da;
+        color: #721c24;
+        border: 1px solid #f5c6cb;
+        display: block;
+      }
+      .info {
+        background-color: #d1ecf1;
+        color: #0c5460;
+        padding: 15px;
+        border-radius: 4px;
+        margin-bottom: 20px;
+      }
+      pre {
+        background-color: #f8f9fa;
+        padding: 10px;
+        border-radius: 4px;
+        overflow-x: auto;
+      }
+    </style>
+  </head>
+  <body>
+    <div class="container">
+      <h1>🔄 Mentor Info Migration Tool</h1>
+
+      <div class="info">
+        <strong>Instructions:</strong>
+        <ol>
+          <li>The mentor data from your JSON file is already loaded below</li>
+          <li>Click "Import to Firebase" to add this data to your website</li>
+          <li>This will create/update the mentorInfo collection in Firebase</li>
+          <li>After successful import, you can delete this file</li>
+        </ol>
+      </div>
+
+      <textarea
+        id="jsonInput"
+        placeholder="Mentor JSON data will appear here..."
+      ></textarea>
+
+      <button onclick="importData()">Import to Firebase</button>
+      <button onclick="location.href='admin.html'">Go to Admin Portal</button>
+      <button class="danger" onclick="clearData()">Clear Firebase Data</button>
+
+      <div id="status" class="status"></div>
+
+      <div id="preview" style="margin-top: 20px"></div>
     </div>
 
-    <textarea id="jsonInput" placeholder="Mentor JSON data will appear here..."></textarea>
-    
-    <button onclick="importData()">Import to Firebase</button>
-    <button onclick="location.href='admin.html'">Go to Admin Portal</button>
-    <button class="danger" onclick="clearData()">Clear Firebase Data</button>
-    
-    <div id="status" class="status"></div>
-    
-    <div id="preview" style="margin-top: 20px;"></div>
-  </div>
+    <script type="module">
+      import { db, doc, setDoc, getDoc } from "./firebase.js";
+      import { CAMPUS_ID } from "./config.js";
 
-  <script type="module">
-    import { db, doc, setDoc, getDoc } from "./firebase.js";
-    import { CAMPUS_ID } from "./config.js";
+      // Mentor data from your JSON file
+      const mentorData = {
+        Aidri: {
+          weekdays: [],
+          preferred_weekdays: [],
+          weekday_behavior: ["Re"],
+          hard_dates: [2, 5, 9, 11, 13, 26, 27, 28, 29, 30],
+          hours_wanted: 30,
+          soft_dates: [],
+          auto_fill_calendar: false,
+        },
+        Avree: {
+          weekdays: [],
+          preferred_weekdays: ["Monday"],
+          weekday_behavior: ["Re"],
+          hard_dates: [
+            1, 2, 3, 4, 6, 8, 10, 13, 14, 17, 20, 21, 24, 25, 29, 31,
+          ],
+          hours_wanted: 30,
+          soft_dates: [],
+          auto_fill_calendar: false,
+        },
+        Emma: {
+          weekdays: [],
+          preferred_weekdays: ["Thursday"],
+          weekday_behavior: ["Re"],
+          hard_dates: [
+            1, 2, 3, 4, 5, 6, 7, 10, 13, 14, 20, 21, 22, 23, 24, 25, 26, 27, 28,
+            31,
+          ],
+          hours_wanted: 16,
+          soft_dates: [],
+          auto_fill_calendar: false,
+        },
+        HayLee: {
+          weekdays: [],
+          preferred_weekdays: [],
+          weekday_behavior: ["Re"],
+          hard_dates: [4, 20, 21, 22, 23, 24, 25, 30, 31],
+          hours_wanted: 30,
+          soft_dates: [],
+          auto_fill_calendar: false,
+        },
+        Michael: {
+          weekdays: ["Monday", "Wednesday"],
+          preferred_weekdays: ["Tuesday"],
+          weekday_behavior: ["Re"],
+          hard_dates: [7, 8, 9],
+          hours_wanted: 40,
+          soft_dates: [],
+          auto_fill_calendar: false,
+        },
+        Sofia: {
+          weekdays: ["Wednesday"],
+          preferred_weekdays: ["Friday"],
+          weekday_behavior: ["Re"],
+          hard_dates: [3, 5, 6, 9, 10, 18, 19, 22, 23],
+          hours_wanted: 24,
+          soft_dates: [],
+          auto_fill_calendar: false,
+        },
+        Topher: {
+          weekdays: ["Monday", "Tuesday", "Saturday"],
+          preferred_weekdays: ["Sunday"],
+          weekday_behavior: ["Re"],
+          hard_dates: [],
+          hours_wanted: 4,
+          soft_dates: [],
+          auto_fill_calendar: false,
+        },
+      };
 
-    // Mentor data from your JSON file
-    const mentorData = {
-      "Aidri": {
-        "weekdays": [],
-        "preferred_weekdays": [],
-        "weekday_behavior": ["Re"],
-        "hard_dates": [2, 5, 9, 11, 13, 26, 27, 28, 29, 30],
-        "hours_wanted": 30,
-        "soft_dates": [],
-        "auto_fill_calendar": false
-      },
-      "Avree": {
-        "weekdays": [],
-        "preferred_weekdays": ["Monday"],
-        "weekday_behavior": ["Re"],
-        "hard_dates": [1, 2, 3, 4, 6, 8, 10, 13, 14, 17, 20, 21, 24, 25, 29, 31],
-        "hours_wanted": 30,
-        "soft_dates": [],
-        "auto_fill_calendar": false
-      },
-      "Emma": {
-        "weekdays": [],
-        "preferred_weekdays": ["Thursday"],
-        "weekday_behavior": ["Re"],
-        "hard_dates": [1, 2, 3, 4, 5, 6, 7, 10, 13, 14, 20, 21, 22, 23, 24, 25, 26, 27, 28, 31],
-        "hours_wanted": 16,
-        "soft_dates": [],
-        "auto_fill_calendar": false
-      },
-      "HayLee": {
-        "weekdays": [],
-        "preferred_weekdays": [],
-        "weekday_behavior": ["Re"],
-        "hard_dates": [4, 20, 21, 22, 23, 24, 25, 30, 31],
-        "hours_wanted": 30,
-        "soft_dates": [],
-        "auto_fill_calendar": false
-      },
-      "Michael": {
-        "weekdays": ["Monday", "Wednesday"],
-        "preferred_weekdays": ["Tuesday"],
-        "weekday_behavior": ["Re"],
-        "hard_dates": [7, 8, 9],
-        "hours_wanted": 40,
-        "soft_dates": [],
-        "auto_fill_calendar": false
-      },
-      "Sofia": {
-        "weekdays": ["Wednesday"],
-        "preferred_weekdays": ["Friday"],
-        "weekday_behavior": ["Re"],
-        "hard_dates": [3, 5, 6, 9, 10, 18, 19, 22, 23],
-        "hours_wanted": 24,
-        "soft_dates": [],
-        "auto_fill_calendar": false
-      },
-      "Topher": {
-        "weekdays": ["Monday", "Tuesday", "Saturday"],
-        "preferred_weekdays": ["Sunday"],
-        "weekday_behavior": ["Re"],
-        "hard_dates": [],
-        "hours_wanted": 4,
-        "soft_dates": [],
-        "auto_fill_calendar": false
-      }
-    };
+      // Display the data
+      document.getElementById("jsonInput").value = JSON.stringify(
+        mentorData,
+        null,
+        2
+      );
 
-    // Display the data
-    document.getElementById('jsonInput').value = JSON.stringify(mentorData, null, 2);
-
-    // Show preview
-    const previewDiv = document.getElementById('preview');
-    let previewHTML = '<h3>Preview of Mentors to Import:</h3><ul>';
-    for (const [name, info] of Object.entries(mentorData)) {
-      previewHTML += `<li><strong>${name}</strong>: ${info.hours_wanted} hours/week`;
-      if (info.preferred_weekdays.length > 0) {
-        previewHTML += `, prefers ${info.preferred_weekdays.join(', ')}`;
-      }
-      if (info.weekdays.length > 0) {
-        previewHTML += `, unavailable on ${info.weekdays.join(', ')}`;
-      }
-      previewHTML += `</li>`;
-    }
-    previewHTML += '</ul>';
-    previewDiv.innerHTML = previewHTML;
-
-    window.importData = async function() {
-      const statusDiv = document.getElementById('status');
-      statusDiv.className = 'status';
-      statusDiv.textContent = 'Importing data...';
-      statusDiv.style.display = 'block';
-
-      try {
-        const jsonText = document.getElementById('jsonInput').value;
-        const data = JSON.parse(jsonText);
-
-        // Check if data already exists
-        const docRef = doc(db, "mentorInfo", CAMPUS_ID);
-        const docSnap = await getDoc(docRef);
-        
-        if (docSnap.exists()) {
-          if (!confirm('Mentor data already exists in Firebase. Do you want to overwrite it?')) {
-            statusDiv.className = 'status error';
-            statusDiv.textContent = 'Import cancelled.';
-            return;
-          }
+      // Show preview
+      const previewDiv = document.getElementById("preview");
+      let previewHTML = "<h3>Preview of Mentors to Import:</h3><ul>";
+      for (const [name, info] of Object.entries(mentorData)) {
+        previewHTML += `<li><strong>${name}</strong>: ${info.hours_wanted} hours/week`;
+        if (info.preferred_weekdays.length > 0) {
+          previewHTML += `, prefers ${info.preferred_weekdays.join(", ")}`;
         }
+        if (info.weekdays.length > 0) {
+          previewHTML += `, unavailable on ${info.weekdays.join(", ")}`;
+        }
+        previewHTML += `</li>`;
+      }
+      previewHTML += "</ul>";
+      previewDiv.innerHTML = previewHTML;
 
-        // Import to Firebase
-        await setDoc(docRef, { mentors: data });
+      window.importData = async function () {
+        const statusDiv = document.getElementById("status");
+        statusDiv.className = "status";
+        statusDiv.textContent = "Importing data...";
+        statusDiv.style.display = "block";
 
-        statusDiv.className = 'status success';
-        statusDiv.innerHTML = `
+        try {
+          const jsonText = document.getElementById("jsonInput").value;
+          const data = JSON.parse(jsonText);
+
+          // Check if data already exists
+          const docRef = doc(db, "mentorInfo", CAMPUS_ID);
+          const docSnap = await getDoc(docRef);
+
+          if (docSnap.exists()) {
+            if (
+              !confirm(
+                "Mentor data already exists in Firebase. Do you want to overwrite it?"
+              )
+            ) {
+              statusDiv.className = "status error";
+              statusDiv.textContent = "Import cancelled.";
+              return;
+            }
+          }
+
+          // Import to Firebase
+          await setDoc(docRef, { mentors: data });
+
+          statusDiv.className = "status success";
+          statusDiv.innerHTML = `
           <strong>✅ Success!</strong><br>
           Imported ${Object.keys(data).length} mentors to Firebase.<br>
           <br>
@@ -235,41 +251,46 @@
           3. The mentor data is now stored in Firebase and will persist
         `;
 
-        console.log('Successfully imported mentor data:', data);
-      } catch (error) {
-        console.error('Error importing data:', error);
-        statusDiv.className = 'status error';
-        statusDiv.innerHTML = `
+          console.log("Successfully imported mentor data:", data);
+        } catch (error) {
+          console.error("Error importing data:", error);
+          statusDiv.className = "status error";
+          statusDiv.innerHTML = `
           <strong>❌ Error:</strong><br>
           ${error.message}<br>
           <br>
           Please check the console for more details.
         `;
-      }
-    };
+        }
+      };
 
-    window.clearData = async function() {
-      if (!confirm('Are you sure you want to CLEAR all mentor data from Firebase? This cannot be undone!')) {
-        return;
-      }
+      window.clearData = async function () {
+        if (
+          !confirm(
+            "Are you sure you want to CLEAR all mentor data from Firebase? This cannot be undone!"
+          )
+        ) {
+          return;
+        }
 
-      const statusDiv = document.getElementById('status');
-      statusDiv.className = 'status';
-      statusDiv.textContent = 'Clearing data...';
-      statusDiv.style.display = 'block';
+        const statusDiv = document.getElementById("status");
+        statusDiv.className = "status";
+        statusDiv.textContent = "Clearing data...";
+        statusDiv.style.display = "block";
 
-      try {
-        const docRef = doc(db, "mentorInfo", CAMPUS_ID);
-        await setDoc(docRef, { mentors: {} });
+        try {
+          const docRef = doc(db, "mentorInfo", CAMPUS_ID);
+          await setDoc(docRef, { mentors: {} });
 
-        statusDiv.className = 'status success';
-        statusDiv.textContent = '✅ All mentor data has been cleared from Firebase.';
-      } catch (error) {
-        console.error('Error clearing data:', error);
-        statusDiv.className = 'status error';
-        statusDiv.textContent = `❌ Error: ${error.message}`;
-      }
-    };
-  </script>
-</body>
+          statusDiv.className = "status success";
+          statusDiv.textContent =
+            "✅ All mentor data has been cleared from Firebase.";
+        } catch (error) {
+          console.error("Error clearing data:", error);
+          statusDiv.className = "status error";
+          statusDiv.textContent = `❌ Error: ${error.message}`;
+        }
+      };
+    </script>
+  </body>
 </html>

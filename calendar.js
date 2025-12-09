@@ -44,7 +44,11 @@ async function loadSlotsConfig() {
       slotsAvailable = config?.slotsAvailable || 3;
       targetMonth = config?.targetMonth !== undefined ? config.targetMonth : 0;
       targetYear = config?.targetYear || 2026;
-      console.log("Loaded calendar config:", { slotsAvailable, targetMonth, targetYear });
+      console.log("Loaded calendar config:", {
+        slotsAvailable,
+        targetMonth,
+        targetYear,
+      });
     } else {
       slotsAvailable = 3; // Default
       targetMonth = 0; // January

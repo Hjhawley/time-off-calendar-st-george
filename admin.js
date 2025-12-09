@@ -1,11 +1,5 @@
 import { attemptLogin, checkAdminAuth, logout, isAdmin } from "./auth.js";
-import {
-  db,
-  doc,
-  setDoc,
-  getDoc,
-  onSnapshot,
-} from "./firebase.js";
+import { db, doc, setDoc, getDoc, onSnapshot } from "./firebase.js";
 import { CAMPUS_ID } from "./config.js";
 import { Schedule } from "./scheduler.js";
 import { showToast } from "./ui.js";
@@ -75,11 +69,13 @@ window.addEventListener("DOMContentLoaded", async () => {
 
 function showLoginModal() {
   document.getElementById("login-modal").style.display = "flex";
-  document.getElementById("admin-password").addEventListener("keypress", (e) => {
-    if (e.key === "Enter") {
-      handleLogin();
-    }
-  });
+  document
+    .getElementById("admin-password")
+    .addEventListener("keypress", (e) => {
+      if (e.key === "Enter") {
+        handleLogin();
+      }
+    });
 }
 
 function showAdminContent() {
@@ -109,7 +105,9 @@ async function loadData() {
     } else {
       // Initialize with empty data
       mentorInfoData = {};
-      await setDoc(doc(db, "mentorInfo", CAMPUS_ID), { mentors: mentorInfoData });
+      await setDoc(doc(db, "mentorInfo", CAMPUS_ID), {
+        mentors: mentorInfoData,
+      });
     }
 
     // Load time-off data
@@ -119,20 +117,22 @@ async function loadData() {
     }
 
     populateMentorSelect();
-    
+
     // Load calendar config
     const configDoc = await getDoc(doc(db, "calendarConfig", CAMPUS_ID));
     if (configDoc.exists()) {
       const config = configDoc.data();
-      document.getElementById("slots-available").value = config?.slotsAvailable || 3;
-      
-      const calendarMonth = config?.targetMonth !== undefined ? config.targetMonth : 0;
+      document.getElementById("slots-available").value =
+        config?.slotsAvailable || 3;
+
+      const calendarMonth =
+        config?.targetMonth !== undefined ? config.targetMonth : 0;
       const calendarYear = config?.targetYear || 2026;
-      
+
       // Set calendar management fields
       document.getElementById("calendar-month").value = calendarMonth;
       document.getElementById("calendar-year").value = calendarYear;
-      
+
       // Default schedule generation to calendar month/year
       document.getElementById("schedule-year").value = calendarYear;
       document.getElementById("schedule-month").value = calendarMonth + 1; // Display months are 1-indexed
@@ -143,7 +143,7 @@ async function loadData() {
       document.getElementById("schedule-year").value = 2026;
       document.getElementById("schedule-month").value = 1;
     }
-    
+
     updateHolidays();
   } catch (error) {
     console.error("Error loading data:", error);
@@ -184,36 +184,40 @@ window.loadMentorInfo = function () {
     // Clear form for new mentor
     document.getElementById("mentor-name").value = "";
     document.getElementById("hours-wanted").value = "";
-    document.getElementById("hard-dates-display").textContent = "No dates selected";
+    document.getElementById("hard-dates-display").textContent =
+      "No dates selected";
     document.getElementById("preferred-weekday").value = "";
     document.getElementById("auto-fill-calendar").checked = false;
-    
+
     const checkboxes = document.querySelectorAll("#weekdays-unavailable input");
     checkboxes.forEach((cb) => (cb.checked = false));
-    
+
     document.getElementById("delete-btn").disabled = true;
   } else {
     const mentor = mentorInfoData[mentorName];
     document.getElementById("mentor-name").value = mentorName;
     document.getElementById("hours-wanted").value = mentor.hours_wanted || 0;
-    
+
     // Display hard dates from time-off calendar
     const mentorTimeOffDates = getMentorTimeOffDates(mentorName);
-    document.getElementById("hard-dates-display").textContent = 
-      mentorTimeOffDates.length > 0 ? mentorTimeOffDates.join(", ") : "No dates selected";
-    
-    document.getElementById("preferred-weekday").value = 
-      mentor.preferred_weekdays && mentor.preferred_weekdays.length > 0 
-        ? mentor.preferred_weekdays[0] 
+    document.getElementById("hard-dates-display").textContent =
+      mentorTimeOffDates.length > 0
+        ? mentorTimeOffDates.join(", ")
+        : "No dates selected";
+
+    document.getElementById("preferred-weekday").value =
+      mentor.preferred_weekdays && mentor.preferred_weekdays.length > 0
+        ? mentor.preferred_weekdays[0]
         : "";
-    
-    document.getElementById("auto-fill-calendar").checked = mentor.auto_fill_calendar || false;
-    
+
+    document.getElementById("auto-fill-calendar").checked =
+      mentor.auto_fill_calendar || false;
+
     const checkboxes = document.querySelectorAll("#weekdays-unavailable input");
     checkboxes.forEach((cb) => {
       cb.checked = mentor.weekdays && mentor.weekdays.includes(cb.value);
     });
-    
+
     document.getElementById("delete-btn").disabled = false;
   }
 };
@@ -236,12 +240,16 @@ window.saveMentorInfo = async function () {
     return;
   }
 
-  const hoursWanted = parseInt(document.getElementById("hours-wanted").value) || 0;
+  const hoursWanted =
+    parseInt(document.getElementById("hours-wanted").value) || 0;
   const preferredWeekday = document.getElementById("preferred-weekday").value;
-  const autoFillCalendar = document.getElementById("auto-fill-calendar").checked;
-  
+  const autoFillCalendar =
+    document.getElementById("auto-fill-calendar").checked;
+
   const weekdays = [];
-  const checkboxes = document.querySelectorAll("#weekdays-unavailable input:checked");
+  const checkboxes = document.querySelectorAll(
+    "#weekdays-unavailable input:checked"
+  );
   checkboxes.forEach((cb) => weekdays.push(cb.value));
 
   // Get hard dates from time-off calendar
@@ -259,7 +267,6 @@ window.saveMentorInfo = async function () {
 
   try {
     await setDoc(doc(db, "mentorInfo", CAMPUS_ID), { mentors: mentorInfoData });
-    
     showToast("Mentor information saved successfully");
     populateMentorSelect();
     document.getElementById("mentor-select").value = name;
@@ -278,7 +285,11 @@ window.deleteMentor = async function () {
     return;
   }
 
-  if (!confirm(`Are you sure you want to delete ${mentorName}? This cannot be undone.`)) {
+  if (
+    !confirm(
+      `Are you sure you want to delete ${mentorName}? This cannot be undone.`
+    )
+  ) {
     return;
   }
 
@@ -307,7 +318,9 @@ window.generateSchedule = function () {
   const scheduleName = document.getElementById("schedule-name").value.trim();
   const year = parseInt(document.getElementById("schedule-year").value);
   const month = parseInt(document.getElementById("schedule-month").value);
-  const holidayDates = parseHolidayDates(document.getElementById("holidays").value);
+  const holidayDates = parseHolidayDates(
+    document.getElementById("holidays").value
+  );
 
   if (!scheduleName) {
     showToast("Please enter a schedule name");
@@ -360,8 +373,10 @@ window.generateSchedule = function () {
 
     statusDiv.textContent = "Schedule generated successfully!";
     statusDiv.className = "status-message success";
-    
-    showToast("Schedule generated! Switch to 'View Schedule' tab to see results.");
+
+    showToast(
+      "Schedule generated! Switch to 'View Schedule' tab to see results."
+    );
     displaySchedule();
   } catch (error) {
     console.error("Error generating schedule:", error);
@@ -373,16 +388,16 @@ window.generateSchedule = function () {
 
 function parseHolidayDates(holidayStr) {
   if (!holidayStr.trim()) return [];
-  
+
   const dates = new Set();
   const parts = holidayStr.split(",");
-  
+
   for (const part of parts) {
     const trimmed = part.trim();
     if (!trimmed) continue;
-    
+
     if (trimmed.includes("-")) {
-      const [start, end] = trimmed.split("-").map(s => parseInt(s.trim()));
+      const [start, end] = trimmed.split("-").map((s) => parseInt(s.trim()));
       if (!isNaN(start) && !isNaN(end) && start <= end) {
         for (let i = start; i <= end; i++) {
           dates.add(i);
@@ -395,22 +410,32 @@ function parseHolidayDates(holidayStr) {
       }
     }
   }
-  
+
   return Array.from(dates).sort((a, b) => a - b);
 }
 
 // Display Schedule
 function displaySchedule() {
   if (!currentSchedule) {
-    document.getElementById("schedule-display").innerHTML = 
+    document.getElementById("schedule-display").innerHTML =
       "<p>No schedule generated yet. Go to 'Generate Schedule' tab to create one.</p>";
     return;
   }
 
   const { name, year, month, schedule } = currentSchedule;
   const monthNames = [
-    "January", "February", "March", "April", "May", "June",
-    "July", "August", "September", "October", "November", "December"
+    "January",
+    "February",
+    "March",
+    "April",
+    "May",
+    "June",
+    "July",
+    "August",
+    "September",
+    "October",
+    "November",
+    "December",
   ];
 
   document.getElementById("schedule-info").innerHTML = `
@@ -428,32 +453,40 @@ function displaySchedule() {
   // Header row with days of week and shift times
   const headerRow = document.createElement("div");
   headerRow.className = "schedule-header-row";
-  
-  const daysOfWeek = ["Sunday", "Monday", "Tuesday", "Wednesday", "Thursday", "Friday", "Saturday"];
+
+  const daysOfWeek = [
+    "Sunday",
+    "Monday",
+    "Tuesday",
+    "Wednesday",
+    "Thursday",
+    "Friday",
+    "Saturday",
+  ];
   const shiftTimesByDay = {
-    "Sunday": "A&B 1:00-10:00",
-    "Monday": "A&B 3:00-10:00\nC 3:00-8:00",
-    "Tuesday": "A&B 3:45-10:00\nC 3:45-8:00",
-    "Wednesday": "A&B 3:45-10:00",
-    "Thursday": "A&B 3:45-10:00\nC 3:45-8:00",
-    "Friday": "A&B 3:45-12:00\nC 3:45-8:00",
-    "Saturday": "A&B 1:00-12:00\nC 1:00-5:00"
+    Sunday: "A&B 1:00-10:00",
+    Monday: "A&B 3:00-10:00\nC 3:00-8:00",
+    Tuesday: "A&B 3:45-10:00\nC 3:45-8:00",
+    Wednesday: "A&B 3:45-10:00",
+    Thursday: "A&B 3:45-10:00\nC 3:45-8:00",
+    Friday: "A&B 3:45-12:00\nC 3:45-8:00",
+    Saturday: "A&B 1:00-12:00\nC 1:00-5:00",
   };
-  
-  daysOfWeek.forEach(day => {
+
+  daysOfWeek.forEach((day) => {
     const header = document.createElement("div");
     header.className = "schedule-header";
-    
+
     const dayName = document.createElement("div");
     dayName.className = "header-day-name";
     dayName.textContent = day;
     header.appendChild(dayName);
-    
+
     const times = document.createElement("div");
     times.className = "header-shift-times";
     times.textContent = shiftTimesByDay[day];
     header.appendChild(times);
-    
+
     headerRow.appendChild(header);
   });
   table.appendChild(headerRow);
@@ -475,11 +508,13 @@ function displaySchedule() {
 
   // Fill in days
   for (let day = 1; day <= daysInMonth; day++) {
-    const assignedDay = schedule.assignedDays.find(d => d.dateInfo.getDate() === day);
-    
+    const assignedDay = schedule.assignedDays.find(
+      (d) => d.dateInfo.getDate() === day
+    );
+
     const cell = document.createElement("div");
     cell.className = "schedule-cell";
-    
+
     // Check if it's a holiday
     const isHoliday = schedule.holidays.dates.includes(day);
     if (isHoliday) {
@@ -495,8 +530,10 @@ function displaySchedule() {
       // Display shift information without time ranges (times are in header)
       const shiftsDiv = document.createElement("div");
       shiftsDiv.className = "schedule-shifts";
-      
-      for (const [shift, mentor] of Object.entries(assignedDay.mentorsOnShift)) {
+
+      for (const [shift, mentor] of Object.entries(
+        assignedDay.mentorsOnShift
+      )) {
         if (mentor) {
           const shiftDiv = document.createElement("div");
           shiftDiv.className = "schedule-shift";
@@ -536,9 +573,10 @@ function displaySchedule() {
   // Add summary stats
   const summary = document.createElement("div");
   summary.className = "schedule-summary";
-  
-  let summaryHTML = "<h4>Hours Summary</h4><table><tr><th>Mentor</th><th>1st Pay Period</th><th>2nd Pay Period</th><th>Wanted</th><th>Days Off</th></tr>";
-  
+
+  let summaryHTML =
+    "<h4>Hours Summary</h4><table><tr><th>Mentor</th><th>1st Pay Period</th><th>2nd Pay Period</th><th>Wanted</th><th>Days Off</th></tr>";
+
   for (let i = 0; i < schedule.m1.length; i++) {
     const m1 = schedule.m1[i];
     const m2 = schedule.m2[i];
@@ -548,11 +586,13 @@ function displaySchedule() {
         <td>${m1.hoursPay}</td>
         <td>${m2.hoursPay}</td>
         <td>${m1.hoursWanted / 2}</td>
-        <td>${[...m1.hardDates, ...m2.hardDates].sort((a,b) => a-b).join(", ")}</td>
+        <td>${[...m1.hardDates, ...m2.hardDates]
+          .sort((a, b) => a - b)
+          .join(", ")}</td>
       </tr>
     `;
   }
-  
+
   summaryHTML += "</table>";
   summary.innerHTML = summaryHTML;
   container.appendChild(summary);
@@ -561,49 +601,49 @@ function displaySchedule() {
 // Auto-fill mentor dates on calendar
 async function autoFillMentorDates(mentorName, unavailableWeekdays) {
   if (unavailableWeekdays.length === 0) return;
-  
+
   // Map short names to full names used in calendar
   const nameMap = {
-    "Aidri": "Aidri B",
-    "Avree": "Avree M",
-    "Emma": "Emma M",
-    "HayLee": "HayLee S",
-    "Michael": "Michael C",
-    "Sofia": "Sofia D",
-    "Topher": "Topher H"
+    Aidri: "Aidri B",
+    Avree: "Avree M",
+    Emma: "Emma M",
+    HayLee: "HayLee S",
+    Michael: "Michael C",
+    Sofia: "Sofia D",
+    Topher: "Topher H",
   };
-  
+
   const fullName = nameMap[mentorName] || mentorName;
-  
+
   // Load calendar config to get current month/year
   const configDoc = await getDoc(doc(db, "calendarConfig", CAMPUS_ID));
   let year = 2026;
   let month = 0; // 0 = January
-  
+
   if (configDoc.exists()) {
     const config = configDoc.data();
     year = config.targetYear || year;
     month = config.targetMonth !== undefined ? config.targetMonth : month;
   }
-  
+
   const weekdayMap = {
-    "Sunday": 0,
-    "Monday": 1,
-    "Tuesday": 2,
-    "Wednesday": 3,
-    "Thursday": 4,
-    "Friday": 5,
-    "Saturday": 6
+    Sunday: 0,
+    Monday: 1,
+    Tuesday: 2,
+    Wednesday: 3,
+    Thursday: 4,
+    Friday: 5,
+    Saturday: 6,
   };
-  
+
   // Get all dates in the month that match the unavailable weekdays
   const daysInMonth = new Date(year, month + 1, 0).getDate();
   const datesToFill = [];
-  
+
   for (let day = 1; day <= daysInMonth; day++) {
     const date = new Date(year, month, day);
     const dayOfWeek = date.getDay();
-    
+
     for (const weekday of unavailableWeekdays) {
       if (weekdayMap[weekday] === dayOfWeek) {
         datesToFill.push(day);
@@ -611,15 +651,15 @@ async function autoFillMentorDates(mentorName, unavailableWeekdays) {
       }
     }
   }
-  
+
   console.log(`Auto-filling ${fullName} for dates:`, datesToFill);
-  
+
   // Update timeOffData for these dates
   for (const day of datesToFill) {
     if (!timeOffData[day]) {
       timeOffData[day] = [];
     }
-    
+
     // Replace first slot with mentor name (use full name from calendar)
     if (timeOffData[day].length === 0) {
       timeOffData[day] = [fullName];
@@ -630,97 +670,109 @@ async function autoFillMentorDates(mentorName, unavailableWeekdays) {
 }
 
 // Calendar Management Functions
-window.updateCalendarDate = async function() {
+window.updateCalendarDate = async function () {
   const month = parseInt(document.getElementById("calendar-month").value);
   const year = parseInt(document.getElementById("calendar-year").value);
-  
+
   if (isNaN(year) || year < 2020 || year > 2100) {
     showToast("Please enter a valid year between 2020 and 2100");
     return;
   }
-  
+
   try {
     // Load existing config
     const configDoc = await getDoc(doc(db, "calendarConfig", CAMPUS_ID));
     const existingConfig = configDoc.exists() ? configDoc.data() : {};
-    
+
     // Update with new month/year while preserving other settings
     const updatedConfig = {
       ...existingConfig,
       targetMonth: month,
-      targetYear: year
+      targetYear: year,
     };
-    
+
     await setDoc(doc(db, "calendarConfig", CAMPUS_ID), updatedConfig);
-    
+
     // Update the schedule generation defaults
     document.getElementById("schedule-year").value = year;
     document.getElementById("schedule-month").value = month + 1;
     updateHolidays();
-    
-    showToast("Calendar date updated successfully. Refresh the main calendar page to see changes.");
+
+    showToast(
+      "Calendar date updated successfully. Refresh the main calendar page to see changes."
+    );
   } catch (error) {
     console.error("Error updating calendar date:", error);
     showToast("Error updating calendar date");
   }
 };
 
-window.updateSlots = async function() {
+window.updateSlots = async function () {
   const slots = parseInt(document.getElementById("slots-available").value);
   if (isNaN(slots) || slots < 1 || slots > 10) {
     showToast("Please enter a valid number between 1 and 10");
     return;
   }
-  
+
   try {
     // Load existing config
     const configDoc = await getDoc(doc(db, "calendarConfig", CAMPUS_ID));
     const existingConfig = configDoc.exists() ? configDoc.data() : {};
-    
+
     // Update with new slots while preserving other settings
     const updatedConfig = {
       ...existingConfig,
-      slotsAvailable: slots
+      slotsAvailable: slots,
     };
-    
+
     await setDoc(doc(db, "calendarConfig", CAMPUS_ID), updatedConfig);
-    showToast("Slots updated successfully. Refresh the main calendar page to see changes.");
+    showToast(
+      "Slots updated successfully. Refresh the main calendar page to see changes."
+    );
   } catch (error) {
     console.error("Error updating slots:", error);
     showToast("Error updating slots");
   }
 };
 
-window.clearCalendar = async function() {
-  if (!confirm("Are you sure you want to clear ALL time-off entries? This will auto-fill based on mentors with auto-fill enabled.")) {
+window.clearCalendar = async function () {
+  if (
+    !confirm(
+      "Are you sure you want to clear ALL time-off entries? This will auto-fill based on mentors with auto-fill enabled."
+    )
+  ) {
     return;
   }
-  
+
   const statusDiv = document.getElementById("calendar-status");
   statusDiv.textContent = "Clearing calendar...";
   statusDiv.className = "status-message info";
   statusDiv.style.display = "block";
-  
+
   try {
     // Clear all time-off data
     timeOffData = {};
-    
+
     // Auto-fill for mentors with auto-fill enabled
     for (const [name, info] of Object.entries(mentorInfoData)) {
-      if (info.auto_fill_calendar && info.weekdays && info.weekdays.length > 0) {
+      if (
+        info.auto_fill_calendar &&
+        info.weekdays &&
+        info.weekdays.length > 0
+      ) {
         console.log(`Auto-filling for ${name} with weekdays:`, info.weekdays);
         await autoFillMentorDates(name, info.weekdays);
       }
     }
-    
+
     console.log("Final timeOffData:", timeOffData);
-    
+
     // Save to Firebase (save once after all auto-fills)
     await setDoc(doc(db, "timeOff", CAMPUS_ID), { mentors: timeOffData });
-    
+
     statusDiv.textContent = "Calendar cleared and auto-filled successfully!";
     statusDiv.className = "status-message success";
-    
+
     setTimeout(() => {
       statusDiv.style.display = "none";
     }, 3000);
