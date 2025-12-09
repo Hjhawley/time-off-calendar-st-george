@@ -401,15 +401,29 @@ class Schedule {
     const day = payDays[0];
     let updateMentors = true;
     const dayName = day.getWeekdayName();
+    const dayNumber = day.dateInfo.getDate();
 
-    const preferredCandidates = day.potentialMentors.filter((mentor) =>
+    // Filter out mentors who have this day as a hard_date (requested off)
+    const availableMentors = day.potentialMentors.filter(
+      (mentor) => !mentor.hardDates.includes(dayNumber)
+    );
+
+    // If no mentors available (all requested off), skip this day
+    if (availableMentors.length === 0) {
+      console.warn(`No available mentors for day ${dayNumber} (all requested off)`);
+      this.assignedDays.push(payDays[0]);
+      payDays.shift();
+      return null;
+    }
+
+    const preferredCandidates = availableMentors.filter((mentor) =>
       mentor.preferredWeekdays.includes(dayName)
     );
 
     let candidates =
       preferredCandidates.length > 0
         ? preferredCandidates
-        : day.potentialMentors;
+        : availableMentors;
     candidates = this.filterSaturdayCandidates(
       candidates,
       day,

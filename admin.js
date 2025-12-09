@@ -145,6 +145,44 @@ async function loadData() {
     }
 
     updateHolidays();
+
+    // Load saved schedule if it exists
+    const scheduleDoc = await getDoc(doc(db, "savedSchedule", CAMPUS_ID));
+    if (scheduleDoc.exists()) {
+      const savedData = scheduleDoc.data();
+      // Reconstruct the Schedule object from serialized data
+      if (savedData.schedule) {
+        const schedule = savedData.schedule;
+        
+        // Reconstruct dates from ISO strings
+        if (schedule.pay1) {
+          schedule.pay1 = schedule.pay1.map(d => ({
+            ...d,
+            dateInfo: new Date(d.dateInfo)
+          }));
+        }
+        if (schedule.pay2) {
+          schedule.pay2 = schedule.pay2.map(d => ({
+            ...d,
+            dateInfo: new Date(d.dateInfo)
+          }));
+        }
+        if (schedule.assignedDays) {
+          schedule.assignedDays = schedule.assignedDays.map(d => ({
+            ...d,
+            dateInfo: new Date(d.dateInfo)
+          }));
+        }
+        
+        currentSchedule = {
+          name: savedData.name,
+          year: savedData.year,
+          month: savedData.month,
+          schedule: schedule
+        };
+        console.log("Loaded saved schedule:", currentSchedule);
+      }
+    }
   } catch (error) {
     console.error("Error loading data:", error);
     showToast("Error loading data");
@@ -213,6 +251,9 @@ window.loadMentorInfo = function () {
     document.getElementById("auto-fill-calendar").checked =
       mentor.auto_fill_calendar || false;
 
+    document.getElementById("show-on-calendar").checked =
+      mentor.show_on_calendar !== undefined ? mentor.show_on_calendar : true;
+
     const checkboxes = document.querySelectorAll("#weekdays-unavailable input");
     checkboxes.forEach((cb) => {
       cb.checked = mentor.weekdays && mentor.weekdays.includes(cb.value);
@@ -225,11 +266,12 @@ window.loadMentorInfo = function () {
 function getMentorTimeOffDates(mentorName) {
   const dates = [];
   for (const [day, requests] of Object.entries(timeOffData)) {
-    if (requests && requests.includes(mentorName)) {
+    if (requests && Array.isArray(requests) && requests.includes(mentorName)) {
       dates.push(parseInt(day));
     }
   }
   dates.sort((a, b) => a - b);
+  console.log(`Time-off dates for ${mentorName}:`, dates);
   return dates;
 }
 
@@ -245,6 +287,8 @@ window.saveMentorInfo = async function () {
   const preferredWeekday = document.getElementById("preferred-weekday").value;
   const autoFillCalendar =
     document.getElementById("auto-fill-calendar").checked;
+  const showOnCalendar =
+    document.getElementById("show-on-calendar").checked;
 
   const weekdays = [];
   const checkboxes = document.querySelectorAll(
@@ -263,6 +307,7 @@ window.saveMentorInfo = async function () {
     hours_wanted: hoursWanted,
     soft_dates: [],
     auto_fill_calendar: autoFillCalendar,
+    show_on_calendar: showOnCalendar,
   };
 
   try {
@@ -314,7 +359,7 @@ window.updateHolidays = function () {
   document.getElementById("holidays").value = holidays;
 };
 
-window.generateSchedule = function () {
+window.generateSchedule = async function () {
   const scheduleName = document.getElementById("schedule-name").value.trim();
   const year = parseInt(document.getElementById("schedule-year").value);
   const month = parseInt(document.getElementById("schedule-month").value);
@@ -370,6 +415,85 @@ window.generateSchedule = function () {
       month: month,
       schedule: schedule,
     };
+
+    // Helper function to serialize mentorsOnShift object
+    const serializeMentorsOnShift = (mentorsOnShift) => {
+      const serialized = {};
+      for (const [shift, mentor] of Object.entries(mentorsOnShift)) {
+        if (mentor && typeof mentor === 'object' && mentor.name) {
+          // It's a Mentor object
+          serialized[shift] = {
+            name: mentor.name,
+            hoursWanted: mentor.hoursWanted,
+            hardDates: mentor.hardDates,
+            softDates: mentor.softDates,
+            hoursPay: mentor.hoursPay,
+            daysLeft: mentor.daysLeft,
+            preferredWeekdays: mentor.preferredWeekdays
+          };
+        } else {
+          // It's null or already serialized
+          serialized[shift] = mentor;
+        }
+      }
+      return serialized;
+    };
+
+    // Save schedule to Firebase for persistence (serialize the schedule object)
+    const serializableSchedule = {
+      name: scheduleName,
+      year: year,
+      month: month,
+      schedule: {
+        m1: schedule.m1.map(m => ({
+          name: m.name,
+          hoursWanted: m.hoursWanted,
+          hardDates: m.hardDates,
+          softDates: m.softDates,
+          hoursPay: m.hoursPay,
+          daysLeft: m.daysLeft,
+          preferredWeekdays: m.preferredWeekdays
+        })),
+        m2: schedule.m2.map(m => ({
+          name: m.name,
+          hoursWanted: m.hoursWanted,
+          hardDates: m.hardDates,
+          softDates: m.softDates,
+          hoursPay: m.hoursPay,
+          daysLeft: m.daysLeft,
+          preferredWeekdays: m.preferredWeekdays
+        })),
+        pay1: schedule.pay1.map(d => ({
+          dateInfo: d.dateInfo.toISOString(),
+          weekday: d.weekday,
+          season: d.season,
+          shifts: d.shifts,
+          mentorsOnShift: serializeMentorsOnShift(d.mentorsOnShift),
+          totalHours: d.totalHours,
+          assignedHours: d.assignedHours
+        })),
+        pay2: schedule.pay2.map(d => ({
+          dateInfo: d.dateInfo.toISOString(),
+          weekday: d.weekday,
+          season: d.season,
+          shifts: d.shifts,
+          mentorsOnShift: serializeMentorsOnShift(d.mentorsOnShift),
+          totalHours: d.totalHours,
+          assignedHours: d.assignedHours
+        })),
+        assignedDays: schedule.assignedDays.map(d => ({
+          dateInfo: d.dateInfo.toISOString(),
+          weekday: d.weekday,
+          season: d.season,
+          shifts: d.shifts,
+          mentorsOnShift: serializeMentorsOnShift(d.mentorsOnShift),
+          totalHours: d.totalHours,
+          assignedHours: d.assignedHours
+        }))
+      }
+    };
+    
+    await setDoc(doc(db, "savedSchedule", CAMPUS_ID), serializableSchedule);
 
     statusDiv.textContent = "Schedule generated successfully!";
     statusDiv.className = "status-message success";
@@ -602,19 +726,6 @@ function displaySchedule() {
 async function autoFillMentorDates(mentorName, unavailableWeekdays) {
   if (unavailableWeekdays.length === 0) return;
 
-  // Map short names to full names used in calendar
-  const nameMap = {
-    Aidri: "Aidri B",
-    Avree: "Avree M",
-    Emma: "Emma M",
-    HayLee: "HayLee S",
-    Michael: "Michael C",
-    Sofia: "Sofia D",
-    Topher: "Topher H",
-  };
-
-  const fullName = nameMap[mentorName] || mentorName;
-
   // Load calendar config to get current month/year
   const configDoc = await getDoc(doc(db, "calendarConfig", CAMPUS_ID));
   let year = 2026;
@@ -652,7 +763,7 @@ async function autoFillMentorDates(mentorName, unavailableWeekdays) {
     }
   }
 
-  console.log(`Auto-filling ${fullName} for dates:`, datesToFill);
+  console.log(`Auto-filling ${mentorName} for dates:`, datesToFill);
 
   // Update timeOffData for these dates
   for (const day of datesToFill) {
@@ -660,11 +771,10 @@ async function autoFillMentorDates(mentorName, unavailableWeekdays) {
       timeOffData[day] = [];
     }
 
-    // Replace first slot with mentor name (use full name from calendar)
-    if (timeOffData[day].length === 0) {
-      timeOffData[day] = [fullName];
-    } else {
-      timeOffData[day][0] = fullName;
+    // Add mentor to next available slot (don't exceed slots limit)
+    // The slots limit will be checked when saving, but we should respect it during auto-fill
+    if (!timeOffData[day].includes(mentorName)) {
+      timeOffData[day].push(mentorName);
     }
   }
 }

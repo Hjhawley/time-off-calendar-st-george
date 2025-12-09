@@ -9,18 +9,36 @@ import {
 import { CAMPUS_ID } from "./config.js";
 import { showToast, updateDayStyles } from "./ui.js";
 
-const mentors = [
-  "Aidri B",
-  "Avree M",
-  "Emma M",
-  "HayLee S",
-  "Michael C",
-  "Sofia D",
-];
+let mentors = []; // Will be loaded from Firebase based on show_on_calendar
 let slotsAvailable = 3; // Default, will be loaded from Firebase
 let targetMonth = 0; // 0 = Jan, 1 = Feb etc, will be loaded from Firebase
 let targetYear = 2026; // Will be loaded from Firebase
 let timeOffData = {};
+
+async function loadMentorList() {
+  try {
+    const docSnap = await getDoc(doc(db, "mentorInfo", CAMPUS_ID));
+    if (docSnap.exists()) {
+      const mentorInfoData = docSnap.data()?.mentors || {};
+      console.log("Raw mentor data from Firebase:", mentorInfoData);
+      
+      // Filter mentors where show_on_calendar is true (default to true if not set)
+      mentors = Object.keys(mentorInfoData)
+        .filter(name => {
+          const showOnCal = mentorInfoData[name].show_on_calendar;
+          // Default to true if undefined, only exclude if explicitly false
+          const shouldShow = showOnCal === undefined ? true : showOnCal;
+          console.log(`Mentor ${name}: show_on_calendar=${showOnCal}, shouldShow=${shouldShow}`);
+          return shouldShow;
+        });
+      console.log("Loaded mentors for calendar:", mentors);
+    } else {
+      console.warn("No mentor info document found in Firebase");
+    }
+  } catch (error) {
+    console.error("Error loading mentor list:", error);
+  }
+}
 
 async function loadTimeOffData() {
   try {
@@ -63,6 +81,7 @@ async function loadSlotsConfig() {
 }
 
 export async function createCalendar() {
+  await loadMentorList();
   await loadSlotsConfig();
   await loadTimeOffData();
 
