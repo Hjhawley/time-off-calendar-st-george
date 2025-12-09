@@ -267,14 +267,6 @@ window.saveMentorInfo = async function () {
 
   try {
     await setDoc(doc(db, "mentorInfo", CAMPUS_ID), { mentors: mentorInfoData });
-
-    // Auto-fill calendar if enabled
-    if (autoFillCalendar) {
-      await autoFillMentorDates(name, weekdays);
-      // Save the updated timeOffData to Firebase
-      await setDoc(doc(db, "timeOff", CAMPUS_ID), { mentors: timeOffData });
-    }
-
     showToast("Mentor information saved successfully");
     populateMentorSelect();
     document.getElementById("mentor-select").value = name;
