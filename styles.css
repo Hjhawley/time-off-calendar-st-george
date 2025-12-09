@@ -91,7 +91,7 @@ button,
 
 .calendar {
   display: grid;
-  grid-template-columns: repeat(7, minmax(120px, 1fr));
+  grid-template-columns: repeat(7, minmax(160px, 1fr));
   gap: 2px;
   max-width: max-content;
   margin: auto;

@@ -181,6 +181,12 @@ async function loadData() {
           schedule: schedule
         };
         console.log("Loaded saved schedule:", currentSchedule);
+        
+        // Display the loaded schedule if we're on the View Schedule tab
+        // or queue it to display when the tab is shown
+        if (document.getElementById("view-schedule").style.display !== "none") {
+          displaySchedule();
+        }
       }
     }
   } catch (error) {
@@ -489,7 +495,8 @@ window.generateSchedule = async function () {
           mentorsOnShift: serializeMentorsOnShift(d.mentorsOnShift),
           totalHours: d.totalHours,
           assignedHours: d.assignedHours
-        }))
+        })),
+        holidays: schedule.holidays || { shift_info: {}, dates: [] }
       }
     };
     
@@ -662,7 +669,17 @@ function displaySchedule() {
           const shiftDiv = document.createElement("div");
           shiftDiv.className = "schedule-shift";
           const shiftLabel = shift.replace("_shift", "").toUpperCase();
-          shiftDiv.textContent = `${shiftLabel} - ${mentor.name}`;
+          
+          // Create clickable mentor name
+          const mentorSpan = document.createElement("span");
+          mentorSpan.className = "editable-mentor";
+          mentorSpan.textContent = mentor.name;
+          mentorSpan.style.cursor = "pointer";
+          mentorSpan.style.textDecoration = "underline";
+          mentorSpan.onclick = () => showMentorDropdown(mentorSpan, day, shift, mentor.name);
+          
+          shiftDiv.textContent = `${shiftLabel} - `;
+          shiftDiv.appendChild(mentorSpan);
           shiftsDiv.appendChild(shiftDiv);
         }
       }
@@ -720,6 +737,154 @@ function displaySchedule() {
   summaryHTML += "</table>";
   summary.innerHTML = summaryHTML;
   container.appendChild(summary);
+}
+
+// Function to show dropdown for editing mentor assignments
+function showMentorDropdown(span, day, shift, currentName) {
+  // Create dropdown
+  const select = document.createElement("select");
+  select.style.fontSize = "inherit";
+  select.style.fontFamily = "inherit";
+  
+  // Add all mentors to dropdown
+  const mentorNames = Object.keys(mentorInfoData);
+  mentorNames.forEach(name => {
+    const option = document.createElement("option");
+    option.value = name;
+    option.textContent = name;
+    if (name === currentName) {
+      option.selected = true;
+    }
+    select.appendChild(option);
+  });
+  
+  // Handle selection
+  select.onchange = async () => {
+    const newName = select.value;
+    await updateScheduleMentor(day, shift, newName);
+    span.textContent = newName;
+    span.onclick = () => showMentorDropdown(span, day, shift, newName);
+  };
+  
+  // Handle clicking away
+  select.onblur = () => {
+    span.style.display = "inline";
+    select.remove();
+  };
+  
+  // Replace span with dropdown temporarily
+  span.style.display = "none";
+  span.parentNode.insertBefore(select, span.nextSibling);
+  select.focus();
+}
+
+// Update mentor assignment in the schedule
+async function updateScheduleMentor(day, shift, newName) {
+  if (!currentSchedule || !currentSchedule.schedule) return;
+  
+  // Find the day in assignedDays
+  const assignedDay = currentSchedule.schedule.assignedDays.find(
+    d => d.dateInfo.getDate() === day
+  );
+  
+  if (assignedDay && assignedDay.mentorsOnShift[shift]) {
+    // Update the mentor name
+    assignedDay.mentorsOnShift[shift].name = newName;
+    
+    // Also update in pay1 or pay2 depending on which pay period
+    const pay1Day = currentSchedule.schedule.pay1.find(
+      d => d.dateInfo.getDate() === day
+    );
+    const pay2Day = currentSchedule.schedule.pay2.find(
+      d => d.dateInfo.getDate() === day
+    );
+    
+    if (pay1Day && pay1Day.mentorsOnShift[shift]) {
+      pay1Day.mentorsOnShift[shift].name = newName;
+    }
+    if (pay2Day && pay2Day.mentorsOnShift[shift]) {
+      pay2Day.mentorsOnShift[shift].name = newName;
+    }
+    
+    // Save updated schedule to Firebase
+    const serializeMentorsOnShift = (mentorsOnShift) => {
+      const serialized = {};
+      for (const [shift, mentor] of Object.entries(mentorsOnShift)) {
+        if (mentor && typeof mentor === 'object' && mentor.name) {
+          serialized[shift] = {
+            name: mentor.name,
+            hoursWanted: mentor.hoursWanted,
+            hardDates: mentor.hardDates,
+            softDates: mentor.softDates,
+            hoursPay: mentor.hoursPay,
+            daysLeft: mentor.daysLeft,
+            preferredWeekdays: mentor.preferredWeekdays
+          };
+        } else {
+          serialized[shift] = mentor;
+        }
+      }
+      return serialized;
+    };
+    
+    const schedule = currentSchedule.schedule;
+    const serializableSchedule = {
+      name: currentSchedule.name,
+      year: currentSchedule.year,
+      month: currentSchedule.month,
+      schedule: {
+        m1: schedule.m1.map(m => ({
+          name: m.name,
+          hoursWanted: m.hoursWanted,
+          hardDates: m.hardDates,
+          softDates: m.softDates,
+          hoursPay: m.hoursPay,
+          daysLeft: m.daysLeft,
+          preferredWeekdays: m.preferredWeekdays
+        })),
+        m2: schedule.m2.map(m => ({
+          name: m.name,
+          hoursWanted: m.hoursWanted,
+          hardDates: m.hardDates,
+          softDates: m.softDates,
+          hoursPay: m.hoursPay,
+          daysLeft: m.daysLeft,
+          preferredWeekdays: m.preferredWeekdays
+        })),
+        pay1: schedule.pay1.map(d => ({
+          dateInfo: d.dateInfo.toISOString(),
+          weekday: d.weekday,
+          season: d.season,
+          shifts: d.shifts,
+          mentorsOnShift: serializeMentorsOnShift(d.mentorsOnShift),
+          totalHours: d.totalHours,
+          assignedHours: d.assignedHours
+        })),
+        pay2: schedule.pay2.map(d => ({
+          dateInfo: d.dateInfo.toISOString(),
+          weekday: d.weekday,
+          season: d.season,
+          shifts: d.shifts,
+          mentorsOnShift: serializeMentorsOnShift(d.mentorsOnShift),
+          totalHours: d.totalHours,
+          assignedHours: d.assignedHours
+        })),
+        assignedDays: schedule.assignedDays.map(d => ({
+          dateInfo: d.dateInfo.toISOString(),
+          weekday: d.weekday,
+          season: d.season,
+          shifts: d.shifts,
+          mentorsOnShift: serializeMentorsOnShift(d.mentorsOnShift),
+          totalHours: d.totalHours,
+          assignedHours: d.assignedHours
+        })),
+        holidays: schedule.holidays
+      }
+    };
+    
+    await setDoc(doc(db, "savedSchedule", CAMPUS_ID), serializableSchedule);
+    showToast("Schedule updated");
+  }
 }
 
 // Auto-fill mentor dates on calendar

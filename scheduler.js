@@ -16,6 +16,8 @@ class Mentor {
     this.hoursPay = 0;
     this.daysLeft = lenPay - hardDates.length;
     this.preferredWeekdays = preferredWeekdays;
+    this.lastShift = null; // Track last shift worked for variety
+    this.shiftHistory = []; // Track recent shifts
   }
 
   legalShiftAdd(shiftLen) {
@@ -113,21 +115,39 @@ class Day {
   }
 
   addShift(mentor) {
-    for (const [shift, slot] of Object.entries(this.mentorsOnShift)) {
+    // Try to assign a different shift than the last one for variety
+    const shifts = Object.entries(this.mentorsOnShift);
+    
+    // Separate shifts by whether they match the last shift worked
+    const differentShifts = [];
+    const sameShifts = [];
+    
+    for (const [shift, slot] of shifts) {
       if (slot === null) {
-        const legalAdd = mentor.legalShiftAdd(this.shifts[shift]);
-
-        if (legalAdd) {
-          this.mentorsOnShift[shift] = mentor;
-          mentor.hoursPay += this.shifts[shift];
-          return true;
+        if (shift === mentor.lastShift) {
+          sameShifts.push([shift, slot]);
+        } else {
+          differentShifts.push([shift, slot]);
         }
-        return false;
       }
     }
-    throw new Error(
-      "Tried to fill shift in full day, this should never happen"
-    );
+    
+    // Try different shifts first for variety
+    const orderedShifts = [...differentShifts, ...sameShifts];
+    
+    for (const [shift, slot] of orderedShifts) {
+      const legalAdd = mentor.legalShiftAdd(this.shifts[shift]);
+
+      if (legalAdd) {
+        this.mentorsOnShift[shift] = mentor;
+        mentor.hoursPay += this.shifts[shift];
+        mentor.lastShift = shift;
+        mentor.shiftHistory.push(shift);
+        return true;
+      }
+    }
+    
+    return false;
   }
 
   addLowestShift(mentor) {
