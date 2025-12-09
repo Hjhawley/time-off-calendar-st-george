@@ -699,13 +699,19 @@ function displaySchedule() {
       const shiftsDiv = document.createElement("div");
       shiftsDiv.className = "schedule-shifts";
 
-      for (const [shift, mentor] of Object.entries(
-        assignedDay.mentorsOnShift
-      )) {
+      // Sort shifts in order: a_shift, b_shift, c_shift, holiday_a_shift, holiday_b_shift
+      const shiftOrder = ["a_shift", "b_shift", "c_shift", "holiday_a_shift", "holiday_b_shift"];
+      const sortedShifts = Object.entries(assignedDay.mentorsOnShift).sort((a, b) => {
+        const indexA = shiftOrder.indexOf(a[0]);
+        const indexB = shiftOrder.indexOf(b[0]);
+        return (indexA === -1 ? 999 : indexA) - (indexB === -1 ? 999 : indexB);
+      });
+
+      for (const [shift, mentor] of sortedShifts) {
         if (mentor) {
           const shiftDiv = document.createElement("div");
           shiftDiv.className = "schedule-shift";
-          const shiftLabel = shift.replace("_shift", "").toUpperCase();
+          const shiftLabel = shift.replace("_shift", "").replace("holiday_", "").toUpperCase();
           
           // Create clickable mentor name
           const mentorSpan = document.createElement("span");
