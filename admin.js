@@ -271,13 +271,50 @@ window.loadMentorInfo = function () {
 
 function getMentorTimeOffDates(mentorName) {
   const dates = [];
+  
+  // Get dates from calendar
   for (const [day, requests] of Object.entries(timeOffData)) {
     if (requests && Array.isArray(requests) && requests.includes(mentorName)) {
       dates.push(parseInt(day));
     }
   }
+  
+  // Also add dates based on unavailable weekdays from mentor profile
+  const mentor = mentorInfoData[mentorName];
+  if (mentor && mentor.weekdays && mentor.weekdays.length > 0) {
+    // Get the year and month from the schedule generation form
+    const year = parseInt(document.getElementById("schedule-year").value) || 2026;
+    const month = parseInt(document.getElementById("schedule-month").value) || 1;
+    
+    const weekdayMap = {
+      "Sunday": 0,
+      "Monday": 1,
+      "Tuesday": 2,
+      "Wednesday": 3,
+      "Thursday": 4,
+      "Friday": 5,
+      "Saturday": 6
+    };
+    
+    // Find all dates in the month that match the unavailable weekdays
+    const daysInMonth = new Date(year, month, 0).getDate();
+    for (let day = 1; day <= daysInMonth; day++) {
+      const date = new Date(year, month - 1, day);
+      const dayOfWeek = date.getDay();
+      
+      for (const weekday of mentor.weekdays) {
+        if (weekdayMap[weekday] === dayOfWeek) {
+          if (!dates.includes(day)) {
+            dates.push(day);
+          }
+          break;
+        }
+      }
+    }
+  }
+  
   dates.sort((a, b) => a - b);
-  console.log(`Time-off dates for ${mentorName}:`, dates);
+  console.log(`Time-off dates for ${mentorName} (calendar + unavailable weekdays):`, dates);
   return dates;
 }
 

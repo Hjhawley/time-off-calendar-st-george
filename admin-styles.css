@@ -20,6 +20,7 @@
   max-width: 400px;
   width: 90%;
   box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
+  text-align: center;
 }
 
 .modal-content h2 {
@@ -36,6 +37,7 @@
   font-size: 1rem;
   background-color: var(--bg-color, #fff);
   color: var(--text-color, #333);
+  box-sizing: border-box;
 }
 
 .modal-content button {
@@ -48,6 +50,7 @@
   font-size: 1rem;
   cursor: pointer;
   transition: background-color 0.3s;
+  box-sizing: border-box;
 }
 
 .modal-content button:hover {
