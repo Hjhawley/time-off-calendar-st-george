@@ -178,9 +178,9 @@ async function loadData() {
           name: savedData.name,
           year: savedData.year,
           month: savedData.month,
-          schedule: schedule
+          schedule: schedule,
+          validationMessages: savedData.validationMessages || []
         };
-        console.log("Loaded saved schedule:", currentSchedule);
         
         // Display the loaded schedule if we're on the View Schedule tab
         // or queue it to display when the tab is shown
@@ -196,7 +196,7 @@ async function loadData() {
 }
 
 // Tab switching
-window.showTab = function (tabName) {
+window.showTab = function (tabName, event) {
   const tabs = document.querySelectorAll(".tab-content");
   tabs.forEach((tab) => (tab.style.display = "none"));
 
@@ -204,7 +204,18 @@ window.showTab = function (tabName) {
   buttons.forEach((btn) => btn.classList.remove("active"));
 
   document.getElementById(tabName).style.display = "block";
-  event.target.classList.add("active");
+  
+  // If called from button click, update active button
+  if (event && event.target) {
+    event.target.classList.add("active");
+  } else {
+    // If called programmatically, find and activate the corresponding button
+    buttons.forEach((btn) => {
+      if (btn.getAttribute('onclick')?.includes(tabName)) {
+        btn.classList.add("active");
+      }
+    });
+  }
 };
 
 // Mentor Management Functions
@@ -314,7 +325,6 @@ function getMentorTimeOffDates(mentorName) {
   }
   
   dates.sort((a, b) => a - b);
-  console.log(`Time-off dates for ${mentorName} (calendar + unavailable weekdays):`, dates);
   return dates;
 }
 
@@ -457,6 +467,7 @@ window.generateSchedule = async function () {
       year: year,
       month: month,
       schedule: schedule,
+      validationMessages: schedule.validationMessages || []
     };
 
     // Helper function to serialize mentorsOnShift object
@@ -534,7 +545,8 @@ window.generateSchedule = async function () {
           assignedHours: d.assignedHours
         })),
         holidays: schedule.holidays || { shift_info: {}, dates: [] }
-      }
+      },
+      validationMessages: schedule.validationMessages || []
     };
     
     await setDoc(doc(db, "savedSchedule", CAMPUS_ID), serializableSchedule);
@@ -542,10 +554,13 @@ window.generateSchedule = async function () {
     statusDiv.textContent = "Schedule generated successfully!";
     statusDiv.className = "status-message success";
 
-    showToast(
-      "Schedule generated! Switch to 'View Schedule' tab to see results."
-    );
+    // Auto-switch to View Schedule tab
+    showTab('view-schedule');
+    
+    // Display the schedule
     displaySchedule();
+    
+    showToast("Schedule generated and displayed!");
   } catch (error) {
     console.error("Error generating schedule:", error);
     statusDiv.textContent = `Error: ${error.message}`;
@@ -613,6 +628,39 @@ function displaySchedule() {
 
   const container = document.getElementById("schedule-display");
   container.innerHTML = "";
+
+  // Display hours summary first
+  updateHoursSummary();
+  
+  // Always show validation summary section when schedule exists
+  const validationDiv = document.getElementById('validation-messages');
+  const validationSummary = document.getElementById('validation-summary');
+  
+  if (validationDiv && validationSummary) {
+    if (currentSchedule.validationMessages && currentSchedule.validationMessages.length > 0) {
+      const messages = currentSchedule.validationMessages.map(msg => {
+        // Format different types of messages
+        const escapedMsg = msg.replace(/</g, '&lt;').replace(/>/g, '&gt;');
+        if (msg.startsWith('✓')) {
+          return `<div class="validation-success">${escapedMsg}</div>`;
+        } else if (msg.startsWith('⚠') || msg.startsWith('Found') || msg.includes('WARNING')) {
+          return `<div class="validation-warning">${escapedMsg}</div>`;
+        } else if (msg.startsWith('  ')) {
+          return `<div class="validation-detail">${escapedMsg}</div>`;
+        } else if (msg.trim() === '') {
+          return '<div style="height: 0.5rem;"></div>';
+        } else {
+          return `<div class="validation-info">${escapedMsg}</div>`;
+        }
+      }).join('');
+      validationDiv.innerHTML = messages;
+      validationSummary.style.display = 'block';
+    } else {
+      // Show a message indicating validation info is not available
+      validationDiv.innerHTML = '<div class="validation-info">Validation information not available for this schedule. Generate a new schedule to see validation details.</div>';
+      validationSummary.style.display = 'block';
+    }
+  }
 
   // Create calendar-style display
   const table = document.createElement("div");
@@ -708,23 +756,29 @@ function displaySchedule() {
       });
 
       for (const [shift, mentor] of sortedShifts) {
+        const shiftDiv = document.createElement("div");
+        shiftDiv.className = "schedule-shift";
+        const shiftLabel = shift.replace("_shift", "").replace("holiday_", "").toUpperCase();
+        
+        // Create clickable mentor name or "(Empty)" for null shifts
+        const mentorSpan = document.createElement("span");
+        mentorSpan.className = "editable-mentor";
+        mentorSpan.style.cursor = "pointer";
+        mentorSpan.style.textDecoration = "underline";
+        
         if (mentor) {
-          const shiftDiv = document.createElement("div");
-          shiftDiv.className = "schedule-shift";
-          const shiftLabel = shift.replace("_shift", "").replace("holiday_", "").toUpperCase();
-          
-          // Create clickable mentor name
-          const mentorSpan = document.createElement("span");
-          mentorSpan.className = "editable-mentor";
           mentorSpan.textContent = mentor.name;
-          mentorSpan.style.cursor = "pointer";
-          mentorSpan.style.textDecoration = "underline";
           mentorSpan.onclick = () => showMentorDropdown(mentorSpan, day, shift, mentor.name);
-          
-          shiftDiv.textContent = `${shiftLabel} - `;
-          shiftDiv.appendChild(mentorSpan);
-          shiftsDiv.appendChild(shiftDiv);
+        } else {
+          mentorSpan.textContent = "(Empty)";
+          mentorSpan.style.color = "#999";
+          mentorSpan.style.fontStyle = "italic";
+          mentorSpan.onclick = () => showMentorDropdown(mentorSpan, day, shift, null);
         }
+        
+        shiftDiv.textContent = `${shiftLabel} - `;
+        shiftDiv.appendChild(mentorSpan);
+        shiftsDiv.appendChild(shiftDiv);
       }
       cell.appendChild(shiftsDiv);
     }
@@ -769,7 +823,7 @@ function displaySchedule() {
         <td>${m1.name}</td>
         <td>${m1.hoursPay}</td>
         <td>${m2.hoursPay}</td>
-        <td>${m1.hoursWanted / 2}</td>
+        <td>${m1.hoursWanted}</td>
         <td>${[...m1.hardDates, ...m2.hardDates]
           .sort((a, b) => a - b)
           .join(", ")}</td>
@@ -782,12 +836,81 @@ function displaySchedule() {
   container.appendChild(summary);
 }
 
+// Function to recalculate and update hours summary based on current assignments
+function updateHoursSummary() {
+  if (!currentSchedule || !currentSchedule.schedule) return;
+  
+  const schedule = currentSchedule.schedule;
+  
+  // Calculate actual hours from assigned shifts
+  const mentorHours = {};
+  
+  // Initialize all mentors
+  for (const mentor of schedule.m1) {
+    mentorHours[mentor.name] = { p1: 0, p2: 0 };
+  }
+  
+  // Count hours from actual assignments
+  for (const day of schedule.assignedDays) {
+    const dayNum = day.dateInfo.getDate();
+    const payPeriod = dayNum <= schedule.lenP1 ? 'p1' : 'p2';
+    
+    for (const [shift, mentor] of Object.entries(day.mentorsOnShift)) {
+      if (mentor && mentor.name) {
+        if (!mentorHours[mentor.name]) {
+          mentorHours[mentor.name] = { p1: 0, p2: 0 };
+        }
+        const shiftHours = day.shifts[shift] || 0;
+        mentorHours[mentor.name][payPeriod] += shiftHours;
+      }
+    }
+  }
+  
+  // Update the summary table
+  const summary = document.querySelector(".schedule-summary");
+  if (!summary) return;
+  
+  let summaryHTML =
+    "<h4>Hours Summary</h4><table><tr><th>Mentor</th><th>1st Pay Period</th><th>2nd Pay Period</th><th>Wanted</th><th>Days Off</th></tr>";
+
+  for (let i = 0; i < schedule.m1.length; i++) {
+    const m1 = schedule.m1[i];
+    const m2 = schedule.m2[i];
+    const p1Hours = mentorHours[m1.name]?.p1 || 0;
+    const p2Hours = mentorHours[m1.name]?.p2 || 0;
+    
+    summaryHTML += `
+      <tr>
+        <td>${m1.name}</td>
+        <td>${p1Hours}</td>
+        <td>${p2Hours}</td>
+        <td>${m1.hoursWanted}</td>
+        <td>${[...m1.hardDates, ...m2.hardDates]
+          .sort((a, b) => a - b)
+          .join(", ")}</td>
+      </tr>
+    `;
+  }
+
+  summaryHTML += "</table>";
+  summary.innerHTML = summaryHTML;
+}
+
 // Function to show dropdown for editing mentor assignments
 function showMentorDropdown(span, day, shift, currentName) {
   // Create dropdown
   const select = document.createElement("select");
   select.style.fontSize = "inherit";
   select.style.fontFamily = "inherit";
+  
+  // Add "(Empty)" option first
+  const emptyOption = document.createElement("option");
+  emptyOption.value = "";
+  emptyOption.textContent = "(Empty)";
+  if (currentName === null || currentName === "") {
+    emptyOption.selected = true;
+  }
+  select.appendChild(emptyOption);
   
   // Add all mentors to dropdown
   const mentorNames = Object.keys(mentorInfoData);
@@ -804,9 +927,20 @@ function showMentorDropdown(span, day, shift, currentName) {
   // Handle selection
   select.onchange = async () => {
     const newName = select.value;
-    await updateScheduleMentor(day, shift, newName);
-    span.textContent = newName;
-    span.onclick = () => showMentorDropdown(span, day, shift, newName);
+    await updateScheduleMentor(day, shift, newName || null);
+    
+    // Update display
+    if (newName) {
+      span.textContent = newName;
+      span.style.color = "";
+      span.style.fontStyle = "";
+      span.onclick = () => showMentorDropdown(span, day, shift, newName);
+    } else {
+      span.textContent = "(Empty)";
+      span.style.color = "#999";
+      span.style.fontStyle = "italic";
+      span.onclick = () => showMentorDropdown(span, day, shift, null);
+    }
   };
   
   // Handle clicking away
@@ -830,9 +964,24 @@ async function updateScheduleMentor(day, shift, newName) {
     d => d.dateInfo.getDate() === day
   );
   
-  if (assignedDay && assignedDay.mentorsOnShift[shift]) {
-    // Update the mentor name
-    assignedDay.mentorsOnShift[shift].name = newName;
+  if (assignedDay) {
+    // Update the mentor (handle null for empty assignments)
+    if (newName === null || newName === "") {
+      assignedDay.mentorsOnShift[shift] = null;
+    } else if (assignedDay.mentorsOnShift[shift]) {
+      assignedDay.mentorsOnShift[shift].name = newName;
+    } else {
+      // Create a new mentor object if slot was previously empty
+      assignedDay.mentorsOnShift[shift] = {
+        name: newName,
+        hoursWanted: mentorInfoData[newName]?.hours_wanted * 2 || 0,
+        hardDates: [],
+        softDates: [],
+        hoursPay: 0,
+        daysLeft: 0,
+        preferredWeekdays: []
+      };
+    }
     
     // Also update in pay1 or pay2 depending on which pay period
     const pay1Day = currentSchedule.schedule.pay1.find(
@@ -842,11 +991,23 @@ async function updateScheduleMentor(day, shift, newName) {
       d => d.dateInfo.getDate() === day
     );
     
-    if (pay1Day && pay1Day.mentorsOnShift[shift]) {
-      pay1Day.mentorsOnShift[shift].name = newName;
+    if (pay1Day && pay1Day.mentorsOnShift[shift] !== undefined) {
+      if (newName === null || newName === "") {
+        pay1Day.mentorsOnShift[shift] = null;
+      } else if (pay1Day.mentorsOnShift[shift]) {
+        pay1Day.mentorsOnShift[shift].name = newName;
+      } else {
+        pay1Day.mentorsOnShift[shift] = assignedDay.mentorsOnShift[shift];
+      }
     }
-    if (pay2Day && pay2Day.mentorsOnShift[shift]) {
-      pay2Day.mentorsOnShift[shift].name = newName;
+    if (pay2Day && pay2Day.mentorsOnShift[shift] !== undefined) {
+      if (newName === null || newName === "") {
+        pay2Day.mentorsOnShift[shift] = null;
+      } else if (pay2Day.mentorsOnShift[shift]) {
+        pay2Day.mentorsOnShift[shift].name = newName;
+      } else {
+        pay2Day.mentorsOnShift[shift] = assignedDay.mentorsOnShift[shift];
+      }
     }
     
     // Save updated schedule to Firebase
@@ -927,6 +1088,7 @@ async function updateScheduleMentor(day, shift, newName) {
     
     await setDoc(doc(db, "savedSchedule", CAMPUS_ID), serializableSchedule);
     showToast("Schedule updated");
+    updateHoursSummary(); // Recalculate hours summary with new assignments
   }
 }
 
@@ -970,8 +1132,6 @@ async function autoFillMentorDates(mentorName, unavailableWeekdays) {
       }
     }
   }
-
-  console.log(`Auto-filling ${mentorName} for dates:`, datesToFill);
 
   // Update timeOffData for these dates
   for (const day of datesToFill) {
@@ -1078,12 +1238,9 @@ window.clearCalendar = async function () {
         info.weekdays &&
         info.weekdays.length > 0
       ) {
-        console.log(`Auto-filling for ${name} with weekdays:`, info.weekdays);
         await autoFillMentorDates(name, info.weekdays);
       }
     }
-
-    console.log("Final timeOffData:", timeOffData);
 
     // Save to Firebase (save once after all auto-fills)
     await setDoc(doc(db, "timeOff", CAMPUS_ID), { mentors: timeOffData });
