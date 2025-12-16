@@ -183,6 +183,11 @@ async function loadSavedSchedulesList() {
     });
     
     displaySavedSchedulesList(schedules);
+    
+    // Auto-load most recent schedule if no schedule is currently loaded
+    if (!currentSchedule && schedules.length > 0) {
+      await loadScheduleById(schedules[0].id, true);
+    }
   } catch (error) {
     console.error('Error loading saved schedules:', error);
   }
@@ -212,12 +217,12 @@ function displaySavedSchedulesList(schedules) {
 }
 
 // Load a specific schedule by ID
-window.loadScheduleById = async function(scheduleId) {
+window.loadScheduleById = async function(scheduleId, silent = false) {
   try {
     const scheduleDoc = await getDoc(doc(db, 'savedSchedules', scheduleId));
     
     if (!scheduleDoc.exists()) {
-      showToast('Schedule not found');
+      if (!silent) showToast('Schedule not found');
       return;
     }
     
@@ -253,13 +258,17 @@ window.loadScheduleById = async function(scheduleId) {
       validationMessages: savedData.validationMessages || []
     };
     
-    // Switch to View Schedule tab and display
-    showTab('view-schedule');
+    // Only switch tabs and show toast if not silent
+    if (!silent) {
+      showTab('view-schedule');
+      showToast('Schedule loaded successfully');
+    }
+    
+    // Always display the schedule
     displaySchedule();
-    showToast('Schedule loaded successfully');
   } catch (error) {
     console.error('Error loading schedule:', error);
-    showToast('Error loading schedule');
+    if (!silent) showToast('Error loading schedule');
   }
 };
 
