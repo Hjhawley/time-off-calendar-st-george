@@ -169,7 +169,6 @@ async function loadSavedSchedulesList() {
       const data = doc.data();
       schedules.push({
         id: doc.id,
-        name: data.name,
         month: data.month,
         year: data.year,
         generatedAt: data.generatedAt
@@ -208,8 +207,8 @@ function displaySavedSchedulesList(schedules) {
   
   const list = schedules.map(schedule => `
     <div class=\"saved-schedule-item\" onclick=\"loadScheduleById('${schedule.id}')\">
-      <div class=\"schedule-name\">${schedule.name}</div>
-      <div class=\"schedule-date\">${monthNames[schedule.month - 1]} ${schedule.year}</div>
+      <div class=\"schedule-name\">${monthNames[schedule.month - 1]}</div>
+      <div class=\"schedule-date\">${schedule.year}</div>
     </div>
   `).join('');
   
@@ -251,7 +250,6 @@ window.loadScheduleById = async function(scheduleId, silent = false) {
     
     currentSchedule = {
       id: scheduleId,
-      name: savedData.name,
       year: savedData.year,
       month: savedData.month,
       schedule: schedule,
@@ -490,17 +488,11 @@ window.updateHolidays = function () {
 };
 
 window.generateSchedule = async function () {
-  const scheduleName = document.getElementById("schedule-name").value.trim();
   const year = parseInt(document.getElementById("schedule-year").value);
   const month = parseInt(document.getElementById("schedule-month").value);
   const holidayDates = parseHolidayDates(
     document.getElementById("holidays").value
   );
-
-  if (!scheduleName) {
-    showToast("Please enter a schedule name");
-    return;
-  }
 
   if (!year || year < 2020 || year > 2100) {
     showToast("Please enter a valid year");
@@ -540,7 +532,6 @@ window.generateSchedule = async function () {
     );
 
     currentSchedule = {
-      name: scheduleName,
       year: year,
       month: month,
       schedule: schedule,
@@ -572,7 +563,6 @@ window.generateSchedule = async function () {
 
     // Save schedule to Firebase for persistence (serialize the schedule object)
     const serializableSchedule = {
-      name: scheduleName,
       year: year,
       month: month,
       schedule: {
@@ -680,7 +670,7 @@ function displaySchedule() {
     return;
   }
 
-  const { name, year, month, schedule } = currentSchedule;
+  const { year, month, schedule } = currentSchedule;
   const monthNames = [
     "January",
     "February",
@@ -697,15 +687,11 @@ function displaySchedule() {
   ];
 
   document.getElementById("schedule-info").innerHTML = `
-    <h3>${name}</h3>
-    <p>${monthNames[month - 1]} ${year}</p>
+    <h2>${monthNames[month - 1]} ${year}</h2>
   `;
 
   const container = document.getElementById("schedule-display");
   container.innerHTML = "";
-
-  // Display hours summary first
-  updateHoursSummary();
   
   // Always show validation summary section when schedule exists
   const validationDiv = document.getElementById('validation-messages');
@@ -883,32 +869,8 @@ function displaySchedule() {
   `;
   container.appendChild(legend);
 
-  // Add summary stats
-  const summary = document.createElement("div");
-  summary.className = "schedule-summary";
-
-  let summaryHTML =
-    "<h4>Hours Summary</h4><table><tr><th>Mentor</th><th>1st Pay Period</th><th>2nd Pay Period</th><th>Wanted</th><th>Days Off</th></tr>";
-
-  for (let i = 0; i < schedule.m1.length; i++) {
-    const m1 = schedule.m1[i];
-    const m2 = schedule.m2[i];
-    summaryHTML += `
-      <tr>
-        <td>${m1.name}</td>
-        <td>${m1.hoursPay}</td>
-        <td>${m2.hoursPay}</td>
-        <td>${m1.hoursWanted}</td>
-        <td>${[...m1.hardDates, ...m2.hardDates]
-          .sort((a, b) => a - b)
-          .join(", ")}</td>
-      </tr>
-    `;
-  }
-
-  summaryHTML += "</table>";
-  summary.innerHTML = summaryHTML;
-  container.appendChild(summary);
+  // Add hours summary after legend and shift descriptions
+  updateHoursSummary();
 }
 
 // Function to recalculate and update hours summary based on current assignments
@@ -942,15 +904,32 @@ function updateHoursSummary() {
   }
   
   // Update the summary table
-  const summary = document.querySelector(".schedule-summary");
-  if (!summary) return;
+  let summary = document.querySelector(".schedule-summary");
+  
+  // Create the summary div if it doesn't exist
+  if (!summary) {
+    summary = document.createElement("div");
+    summary.className = "schedule-summary";
+    const container = document.getElementById("schedule-display");
+    if (container) {
+      container.appendChild(summary);
+    } else {
+      return;
+    }
+  }
   
   let summaryHTML =
     "<h4>Hours Summary</h4><table><tr><th>Mentor</th><th>1st Pay Period</th><th>2nd Pay Period</th><th>Wanted</th><th>Days Off</th></tr>";
 
+  // Create array of mentor pairs and sort by name
+  const mentorPairs = [];
   for (let i = 0; i < schedule.m1.length; i++) {
-    const m1 = schedule.m1[i];
-    const m2 = schedule.m2[i];
+    mentorPairs.push({ m1: schedule.m1[i], m2: schedule.m2[i] });
+  }
+  mentorPairs.sort((a, b) => a.m1.name.localeCompare(b.m1.name));
+
+  // Build table rows in sorted order
+  for (const { m1, m2 } of mentorPairs) {
     const p1Hours = mentorHours[m1.name]?.p1 || 0;
     const p2Hours = mentorHours[m1.name]?.p2 || 0;
     
@@ -1108,7 +1087,6 @@ async function updateScheduleMentor(day, shift, newName) {
     
     const schedule = currentSchedule.schedule;
     const serializableSchedule = {
-      name: currentSchedule.name,
       year: currentSchedule.year,
       month: currentSchedule.month,
       schedule: {
@@ -1188,7 +1166,6 @@ window.saveCurrentSchedule = async function() {
 
     // Generate document ID from campus_month_year
     const docId = `${CAMPUS_ID}_${currentSchedule.month}_${currentSchedule.year}`;
-    const scheduleName = `${monthNames[currentSchedule.month - 1]} ${currentSchedule.year}`;
 
     // Helper to remove undefined values
     function removeUndefined(obj) {
@@ -1210,6 +1187,7 @@ window.saveCurrentSchedule = async function() {
     function serializeMentor(m) {
       return removeUndefined({
         name: m.name,
+        hoursWanted: m.hoursWanted,
         autoFillCalendar: m.autoFillCalendar,
         hardDates: m.hardDates,
         softDates: m.softDates,
@@ -1236,7 +1214,6 @@ window.saveCurrentSchedule = async function() {
 
     const serializableSchedule = removeUndefined({
       campusId: CAMPUS_ID,
-      name: scheduleName,
       year: currentSchedule.year,
       month: currentSchedule.month,
       generatedAt: new Date().toISOString(),
@@ -1285,7 +1262,8 @@ window.saveCurrentSchedule = async function() {
     // Reload the saved schedules list
     await loadSavedSchedulesList();
 
-    showToast(`Schedule saved as "${scheduleName}"`);
+    const monthName = monthNames[currentSchedule.month - 1];
+    showToast(`Schedule saved: ${monthName} ${currentSchedule.year}`);
   } catch (error) {
     console.error('Error saving schedule:', error);
     showToast('Error saving schedule');
