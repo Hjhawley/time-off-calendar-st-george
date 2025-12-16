@@ -6,6 +6,9 @@ import {
   getDoc,
   onSnapshot,
   collection,
+  getDocs,
+  query,
+  where,
 } from "https://www.gstatic.com/firebasejs/10.7.0/firebase-firestore.js";
 import { firebaseConfig, CAMPUS_ID } from "./config.js";
 
@@ -17,7 +20,7 @@ console.log("Firebase App Initialized:", app);
 const db = getFirestore(app);
 console.log("Firestore Initialized:", db);
 
-export { db, doc, setDoc, getDoc, onSnapshot };
+export { db, doc, setDoc, getDoc, onSnapshot, collection, getDocs, query, where };
 
 // Backup creation utility
 export async function createBackup(data, suffix = "auto") {

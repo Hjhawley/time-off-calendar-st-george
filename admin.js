@@ -1,5 +1,5 @@
 import { attemptLogin, checkAdminAuth, logout, isAdmin } from "./auth.js";
-import { db, doc, setDoc, getDoc, onSnapshot } from "./firebase.js";
+import { db, doc, setDoc, getDoc, onSnapshot, collection, getDocs, query, where } from "./firebase.js";
 import { CAMPUS_ID } from "./config.js";
 import { Schedule } from "./scheduler.js";
 import { showToast } from "./ui.js";
@@ -146,54 +146,122 @@ async function loadData() {
 
     updateHolidays();
 
-    // Load saved schedule if it exists
-    const scheduleDoc = await getDoc(doc(db, "savedSchedule", CAMPUS_ID));
-    if (scheduleDoc.exists()) {
-      const savedData = scheduleDoc.data();
-      // Reconstruct the Schedule object from serialized data
-      if (savedData.schedule) {
-        const schedule = savedData.schedule;
-        
-        // Reconstruct dates from ISO strings
-        if (schedule.pay1) {
-          schedule.pay1 = schedule.pay1.map(d => ({
-            ...d,
-            dateInfo: new Date(d.dateInfo)
-          }));
-        }
-        if (schedule.pay2) {
-          schedule.pay2 = schedule.pay2.map(d => ({
-            ...d,
-            dateInfo: new Date(d.dateInfo)
-          }));
-        }
-        if (schedule.assignedDays) {
-          schedule.assignedDays = schedule.assignedDays.map(d => ({
-            ...d,
-            dateInfo: new Date(d.dateInfo)
-          }));
-        }
-        
-        currentSchedule = {
-          name: savedData.name,
-          year: savedData.year,
-          month: savedData.month,
-          schedule: schedule,
-          validationMessages: savedData.validationMessages || []
-        };
-        
-        // Display the loaded schedule if we're on the View Schedule tab
-        // or queue it to display when the tab is shown
-        if (document.getElementById("view-schedule").style.display !== "none") {
-          displaySchedule();
-        }
-      }
-    }
+    // Load list of all saved schedules
+    await loadSavedSchedulesList();
   } catch (error) {
     console.error("Error loading data:", error);
     showToast("Error loading data");
   }
 }
+
+// Load list of all saved schedules
+async function loadSavedSchedulesList() {
+  try {
+    const schedulesQuery = query(
+      collection(db, 'savedSchedules'),
+      where('campusId', '==', CAMPUS_ID)
+    );
+    
+    const snapshot = await getDocs(schedulesQuery);
+    const schedules = [];
+    
+    snapshot.forEach(doc => {
+      const data = doc.data();
+      schedules.push({
+        id: doc.id,
+        name: data.name,
+        month: data.month,
+        year: data.year,
+        generatedAt: data.generatedAt
+      });
+    });
+    
+    // Sort by year and month (newest first)
+    schedules.sort((a, b) => {
+      if (b.year !== a.year) return b.year - a.year;
+      return b.month - a.month;
+    });
+    
+    displaySavedSchedulesList(schedules);
+  } catch (error) {
+    console.error('Error loading saved schedules:', error);
+  }
+}
+
+// Display saved schedules list
+function displaySavedSchedulesList(schedules) {
+  const container = document.getElementById('saved-schedules-list');
+  if (!container) return;
+  
+  if (schedules.length === 0) {
+    container.innerHTML = '<p class=\"no-schedules\">No saved schedules yet. Generate a schedule and save it to see it here.</p>';
+    return;
+  }
+  
+  const monthNames = ['January', 'February', 'March', 'April', 'May', 'June',
+    'July', 'August', 'September', 'October', 'November', 'December'];
+  
+  const list = schedules.map(schedule => `
+    <div class=\"saved-schedule-item\" onclick=\"loadScheduleById('${schedule.id}')\">
+      <div class=\"schedule-name\">${schedule.name}</div>
+      <div class=\"schedule-date\">${monthNames[schedule.month - 1]} ${schedule.year}</div>
+    </div>
+  `).join('');
+  
+  container.innerHTML = list;
+}
+
+// Load a specific schedule by ID
+window.loadScheduleById = async function(scheduleId) {
+  try {
+    const scheduleDoc = await getDoc(doc(db, 'savedSchedules', scheduleId));
+    
+    if (!scheduleDoc.exists()) {
+      showToast('Schedule not found');
+      return;
+    }
+    
+    const savedData = scheduleDoc.data();
+    const schedule = savedData.schedule;
+    
+    // Reconstruct dates from ISO strings
+    if (schedule.pay1) {
+      schedule.pay1 = schedule.pay1.map(d => ({
+        ...d,
+        dateInfo: new Date(d.dateInfo)
+      }));
+    }
+    if (schedule.pay2) {
+      schedule.pay2 = schedule.pay2.map(d => ({
+        ...d,
+        dateInfo: new Date(d.dateInfo)
+      }));
+    }
+    if (schedule.assignedDays) {
+      schedule.assignedDays = schedule.assignedDays.map(d => ({
+        ...d,
+        dateInfo: new Date(d.dateInfo)
+      }));
+    }
+    
+    currentSchedule = {
+      id: scheduleId,
+      name: savedData.name,
+      year: savedData.year,
+      month: savedData.month,
+      schedule: schedule,
+      validationMessages: savedData.validationMessages || []
+    };
+    
+    // Switch to View Schedule tab and display
+    showTab('view-schedule');
+    displaySchedule();
+    showToast('Schedule loaded successfully');
+  } catch (error) {
+    console.error('Error loading schedule:', error);
+    showToast('Error loading schedule');
+  }
+};
 
 // Tab switching
 window.showTab = function (tabName, event) {
@@ -549,8 +617,6 @@ window.generateSchedule = async function () {
       validationMessages: schedule.validationMessages || []
     };
     
-    await setDoc(doc(db, "savedSchedule", CAMPUS_ID), serializableSchedule);
-
     statusDiv.textContent = "Schedule generated successfully!";
     statusDiv.className = "status-message success";
 
@@ -560,7 +626,7 @@ window.generateSchedule = async function () {
     // Display the schedule
     displaySchedule();
     
-    showToast("Schedule generated and displayed!");
+    showToast("Schedule generated! Click 'Save Schedule' to save it.");
   } catch (error) {
     console.error("Error generating schedule:", error);
     statusDiv.textContent = `Error: ${error.message}`;
@@ -1086,11 +1152,141 @@ async function updateScheduleMentor(day, shift, newName) {
       }
     };
     
-    await setDoc(doc(db, "savedSchedule", CAMPUS_ID), serializableSchedule);
+    // Save to the current schedule structure (by month-year)
+    await saveCurrentSchedule();
     showToast("Schedule updated");
     updateHoursSummary(); // Recalculate hours summary with new assignments
   }
 }
+
+// Save current schedule to database
+window.saveCurrentSchedule = async function() {
+  if (!currentSchedule || !currentSchedule.schedule) {
+    showToast('No schedule to save');
+    return;
+  }
+
+  const saveBtn = document.getElementById('save-schedule-btn');
+  if (saveBtn) {
+    saveBtn.disabled = true;
+    saveBtn.textContent = 'Saving...';
+  }
+
+  try {
+    const schedule = currentSchedule.schedule;
+    const monthNames = ['January', 'February', 'March', 'April', 'May', 'June',
+      'July', 'August', 'September', 'October', 'November', 'December'];
+
+    // Generate document ID from campus_month_year
+    const docId = `${CAMPUS_ID}_${currentSchedule.month}_${currentSchedule.year}`;
+    const scheduleName = `${monthNames[currentSchedule.month - 1]} ${currentSchedule.year}`;
+
+    // Helper to remove undefined values
+    function removeUndefined(obj) {
+      if (Array.isArray(obj)) {
+        return obj.map(item => removeUndefined(item));
+      }
+      if (obj !== null && typeof obj === 'object') {
+        const cleaned = {};
+        for (const [key, value] of Object.entries(obj)) {
+          if (value !== undefined) {
+            cleaned[key] = removeUndefined(value);
+          }
+        }
+        return cleaned;
+      }
+      return obj;
+    }
+
+    function serializeMentor(m) {
+      return removeUndefined({
+        name: m.name,
+        autoFillCalendar: m.autoFillCalendar,
+        hardDates: m.hardDates,
+        softDates: m.softDates,
+        hoursPay: m.hoursPay,
+        daysLeft: m.daysLeft,
+        preferredWeekdays: m.preferredWeekdays,
+        weekdays: m.weekdays
+      });
+    }
+
+    function serializeMentorsOnShift(mentorsObj) {
+      const serialized = {};
+      for (const [shift, mentors] of Object.entries(mentorsObj)) {
+        if (Array.isArray(mentors)) {
+          serialized[shift] = mentors.map(serializeMentor);
+        } else if (mentors && typeof mentors === 'object') {
+          serialized[shift] = serializeMentor(mentors);
+        } else {
+          serialized[shift] = mentors;
+        }
+      }
+      return serialized;
+    }
+
+    const serializableSchedule = removeUndefined({
+      campusId: CAMPUS_ID,
+      name: scheduleName,
+      year: currentSchedule.year,
+      month: currentSchedule.month,
+      generatedAt: new Date().toISOString(),
+      schedule: {
+        m1: schedule.m1.map(serializeMentor),
+        m2: schedule.m2.map(serializeMentor),
+        lenP1: schedule.lenP1,
+        lenP2: schedule.lenP2,
+        pay1: schedule.pay1.map(d => removeUndefined({
+          dateInfo: d.dateInfo.toISOString(),
+          weekday: d.weekday,
+          season: d.season,
+          shifts: d.shifts,
+          mentorsOnShift: serializeMentorsOnShift(d.mentorsOnShift),
+          totalHours: d.totalHours,
+          assignedHours: d.assignedHours
+        })),
+        pay2: schedule.pay2.map(d => removeUndefined({
+          dateInfo: d.dateInfo.toISOString(),
+          weekday: d.weekday,
+          season: d.season,
+          shifts: d.shifts,
+          mentorsOnShift: serializeMentorsOnShift(d.mentorsOnShift),
+          totalHours: d.totalHours,
+          assignedHours: d.assignedHours
+        })),
+        assignedDays: schedule.assignedDays.map(d => removeUndefined({
+          dateInfo: d.dateInfo.toISOString(),
+          weekday: d.weekday,
+          season: d.season,
+          shifts: d.shifts,
+          mentorsOnShift: serializeMentorsOnShift(d.mentorsOnShift),
+          totalHours: d.totalHours,
+          assignedHours: d.assignedHours
+        })),
+        holidays: schedule.holidays || { shift_info: {}, dates: [] }
+      },
+      validationMessages: currentSchedule.validationMessages || []
+    });
+
+    await setDoc(doc(db, 'savedSchedules', docId), serializableSchedule);
+    
+    // Update current schedule with the ID
+    currentSchedule.id = docId;
+
+    // Reload the saved schedules list
+    await loadSavedSchedulesList();
+
+    showToast(`Schedule saved as "${scheduleName}"`);
+  } catch (error) {
+    console.error('Error saving schedule:', error);
+    showToast('Error saving schedule');
+  } finally {
+    if (saveBtn) {
+      saveBtn.disabled = false;
+      saveBtn.textContent = 'Save Schedule';
+    }
+  }
+};
 
 // Auto-fill mentor dates on calendar
 async function autoFillMentorDates(mentorName, unavailableWeekdays) {

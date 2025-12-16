@@ -187,6 +187,12 @@
 
           <div id="generation-status" class="status-message"></div>
         </div>
+
+        <!-- Saved Schedules Section -->
+        <div class="saved-schedules-section">
+          <h3>Saved Schedules</h3>
+          <div id="saved-schedules-list" class="saved-schedules-list"></div>
+        </div>
       </div>
 
       <!-- View Schedule Tab -->
@@ -197,6 +203,12 @@
         <div id="hours-summary" class="hours-summary"></div>
         
         <div id="schedule-display" class="schedule-calendar"></div>
+
+        <div class="form-actions" style="margin: 20px 0;">
+          <button onclick="saveCurrentSchedule()" class="btn-primary" id="save-schedule-btn">
+            Save Schedule
+          </button>
+        </div>
         
         <div id="validation-summary" class="validation-summary">
           <h3>Validation Summary</h3>

@@ -511,6 +511,60 @@
   opacity: 0.9;
 }
 
+/* Saved Schedules Section */
+.saved-schedules-section {
+  margin-top: 3rem;
+  padding-top: 2rem;
+  border-top: 2px solid var(--border-color, #ddd);
+}
+
+.saved-schedules-section h3 {
+  color: var(--text-color);
+  margin-bottom: 1rem;
+  font-size: 1.5rem;
+}
+
+.saved-schedules-list {
+  display: grid;
+  gap: 1rem;
+  grid-template-columns: repeat(auto-fill, minmax(250px, 1fr));
+  margin-top: 1rem;
+}
+
+.saved-schedule-item {
+  background-color: var(--input-bg, #f8f9fa);
+  border: 2px solid var(--border-color, #ddd);
+  border-radius: 8px;
+  padding: 1rem;
+  cursor: pointer;
+  transition: all 0.2s ease;
+}
+
+.saved-schedule-item:hover {
+  border-color: var(--primary-color);
+  transform: translateY(-2px);
+  box-shadow: 0 4px 8px rgba(0, 0, 0, 0.1);
+}
+
+.schedule-name {
+  font-weight: 600;
+  font-size: 1.1rem;
+  color: var(--text-color);
+  margin-bottom: 0.5rem;
+}
+
+.schedule-date {
+  color: #6c757d;
+  font-size: 0.95rem;
+}
+
+.no-schedules {
+  color: #6c757d;
+  font-style: italic;
+  padding: 2rem;
+  text-align: center;
+}
+
 /* Dark mode support */
 @media (prefers-color-scheme: dark) {
   :root {
