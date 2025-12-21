@@ -541,17 +541,22 @@ window.generateSchedule = async function () {
     // Helper function to serialize mentorsOnShift object
     const serializeMentorsOnShift = (mentorsOnShift) => {
       const serialized = {};
-      for (const [shift, mentor] of Object.entries(mentorsOnShift)) {
+      for (const [shift, mentor] of Object.entries(mentorsOnShift || {})) {
         if (mentor && typeof mentor === 'object' && mentor.name) {
           // It's a Mentor object
           serialized[shift] = {
             name: mentor.name,
-            hoursWanted: mentor.hoursWanted,
-            hardDates: mentor.hardDates,
-            softDates: mentor.softDates,
-            hoursPay: mentor.hoursPay,
-            daysLeft: mentor.daysLeft,
-            preferredWeekdays: mentor.preferredWeekdays
+            hoursWantedPerWeek: mentor.hoursWantedPerWeek || mentor.hoursWanted || 0,
+            hoursWanted: mentor.hoursWanted || mentor.hoursWantedPerWeek || 0,
+            hardDates: mentor.hardDates || mentor.unavailableDates || [],
+            unavailableDates: mentor.unavailableDates || mentor.hardDates || [],
+            unavailableWeekdays: mentor.unavailableWeekdays || [],
+            softDates: mentor.softDates || [],
+            hoursPay: mentor.hoursPay || mentor.hoursAssigned || 0,
+            hoursAssigned: mentor.hoursAssigned || mentor.hoursPay || 0,
+            daysLeft: mentor.daysLeft || 0,
+            preferredWeekdays: mentor.preferredWeekdays || [],
+            preferredWeekday: mentor.preferredWeekday || null
           };
         } else {
           // It's null or already serialized
@@ -561,53 +566,55 @@ window.generateSchedule = async function () {
       return serialized;
     };
 
+    // Helper function to serialize a mentor
+    const serializeMentor = (m) => ({
+      name: m.name,
+      hoursWantedPerWeek: m.hoursWantedPerWeek || m.hoursWanted || 0,
+      hoursWanted: m.hoursWanted || m.hoursWantedPerWeek || 0,
+      hardDates: m.hardDates || m.unavailableDates || [],
+      unavailableDates: m.unavailableDates || m.hardDates || [],
+      unavailableWeekdays: m.unavailableWeekdays || [],
+      softDates: m.softDates || [],
+      hoursPay: m.hoursPay || m.hoursAssigned || 0,
+      hoursAssigned: m.hoursAssigned || m.hoursPay || 0,
+      daysLeft: m.daysLeft || 0,
+      preferredWeekdays: m.preferredWeekdays || [],
+      preferredWeekday: m.preferredWeekday || null
+    });
+
     // Save schedule to Firebase for persistence (serialize the schedule object)
     const serializableSchedule = {
       year: year,
       month: month,
       schedule: {
-        m1: schedule.m1.map(m => ({
-          name: m.name,
-          hoursWanted: m.hoursWanted,
-          hardDates: m.hardDates,
-          softDates: m.softDates,
-          hoursPay: m.hoursPay,
-          daysLeft: m.daysLeft,
-          preferredWeekdays: m.preferredWeekdays
-        })),
-        m2: schedule.m2.map(m => ({
-          name: m.name,
-          hoursWanted: m.hoursWanted,
-          hardDates: m.hardDates,
-          softDates: m.softDates,
-          hoursPay: m.hoursPay,
-          daysLeft: m.daysLeft,
-          preferredWeekdays: m.preferredWeekdays
-        })),
+        m1: schedule.m1.map(serializeMentor),
+        m2: schedule.m2.map(serializeMentor),
+        lenP1: schedule.lenP1 || 15,
+        numWeeksInMonth: schedule.numWeeksInMonth,
         pay1: schedule.pay1.map(d => ({
-          dateInfo: d.dateInfo.toISOString(),
+          dateInfo: (d.dateInfo || d.date).toISOString(),
           weekday: d.weekday,
           season: d.season,
           shifts: d.shifts,
-          mentorsOnShift: serializeMentorsOnShift(d.mentorsOnShift),
+          mentorsOnShift: serializeMentorsOnShift(d.mentorsOnShift || d.assignments),
           totalHours: d.totalHours,
           assignedHours: d.assignedHours
         })),
         pay2: schedule.pay2.map(d => ({
-          dateInfo: d.dateInfo.toISOString(),
+          dateInfo: (d.dateInfo || d.date).toISOString(),
           weekday: d.weekday,
           season: d.season,
           shifts: d.shifts,
-          mentorsOnShift: serializeMentorsOnShift(d.mentorsOnShift),
+          mentorsOnShift: serializeMentorsOnShift(d.mentorsOnShift || d.assignments),
           totalHours: d.totalHours,
           assignedHours: d.assignedHours
         })),
         assignedDays: schedule.assignedDays.map(d => ({
-          dateInfo: d.dateInfo.toISOString(),
+          dateInfo: (d.dateInfo || d.date).toISOString(),
           weekday: d.weekday,
           season: d.season,
           shifts: d.shifts,
-          mentorsOnShift: serializeMentorsOnShift(d.mentorsOnShift),
+          mentorsOnShift: serializeMentorsOnShift(d.mentorsOnShift || d.assignments),
           totalHours: d.totalHours,
           assignedHours: d.assignedHours
         })),
@@ -785,15 +792,17 @@ function displaySchedule() {
 
   // Fill in days
   for (let day = 1; day <= daysInMonth; day++) {
-    const assignedDay = schedule.assignedDays.find(
-      (d) => d.dateInfo.getDate() === day
-    );
+    const assignedDay = schedule.assignedDays.find((d) => {
+      const dateInfo = d.dateInfo || d.date;
+      const dayNum = typeof dateInfo.getDate === 'function' ? dateInfo.getDate() : new Date(dateInfo).getDate();
+      return dayNum === day;
+    });
 
     const cell = document.createElement("div");
     cell.className = "schedule-cell";
 
     // Check if it's a holiday
-    const isHoliday = schedule.holidays.dates.includes(day);
+    const isHoliday = schedule.holidays && schedule.holidays.dates && schedule.holidays.dates.includes(day);
     if (isHoliday) {
       cell.classList.add("holiday");
     }
@@ -879,29 +888,56 @@ function updateHoursSummary() {
   
   const schedule = currentSchedule.schedule;
   
-  // Calculate actual hours from assigned shifts
-  const mentorHours = {};
+  // Calculate actual hours from assigned shifts by counting from the calendar
+  const mentorData = {};
   
-  // Initialize all mentors
-  for (const mentor of schedule.m1) {
-    mentorHours[mentor.name] = { p1: 0, p2: 0 };
+  // Initialize all mentors from mentorInfoData (the source of truth for mentor info)
+  for (const [name, info] of Object.entries(mentorInfoData)) {
+    mentorData[name] = {
+      totalHours: 0,
+      hoursWantedPerWeek: info.hours_wanted || 0,
+      daysOff: [...(info.hard_dates || [])]
+    };
   }
   
-  // Count hours from actual assignments
-  for (const day of schedule.assignedDays) {
-    const dayNum = day.dateInfo.getDate();
-    const payPeriod = dayNum <= schedule.lenP1 ? 'p1' : 'p2';
+  // Also initialize from schedule.m1 in case there are mentors not in mentorInfoData
+  const allMentors = schedule.m1 || [];
+  for (const mentor of allMentors) {
+    if (!mentorData[mentor.name]) {
+      mentorData[mentor.name] = {
+        totalHours: 0,
+        hoursWantedPerWeek: mentor.hoursWantedPerWeek || mentor.hoursWanted || 0,
+        daysOff: [...(mentor.hardDates || mentor.unavailableDates || [])]
+      };
+    }
+  }
+  
+  // Count hours from actual assignments on the calendar
+  const assignedDays = schedule.assignedDays || [];
+  for (const day of assignedDays) {
+    const mentorsOnShift = day.mentorsOnShift || day.assignments || {};
     
-    for (const [shift, mentor] of Object.entries(day.mentorsOnShift)) {
+    for (const [shift, mentor] of Object.entries(mentorsOnShift)) {
       if (mentor && mentor.name) {
-        if (!mentorHours[mentor.name]) {
-          mentorHours[mentor.name] = { p1: 0, p2: 0 };
+        // Initialize if mentor wasn't already tracked
+        if (!mentorData[mentor.name]) {
+          mentorData[mentor.name] = {
+            totalHours: 0,
+            hoursWantedPerWeek: mentor.hoursWantedPerWeek || mentor.hoursWanted || mentorInfoData[mentor.name]?.hours_wanted || 0,
+            daysOff: []
+          };
         }
         const shiftHours = day.shifts[shift] || 0;
-        mentorHours[mentor.name][payPeriod] += shiftHours;
+        mentorData[mentor.name].totalHours += shiftHours;
       }
     }
   }
+  
+  // Calculate number of weeks in this month for target calculation
+  const year = currentSchedule.year;
+  const month = currentSchedule.month;
+  const daysInMonth = new Date(year, month, 0).getDate();
+  const numWeeksInMonth = daysInMonth / 7;
   
   // Update the summary table
   let summary = document.querySelector(".schedule-summary");
@@ -919,29 +955,27 @@ function updateHoursSummary() {
   }
   
   let summaryHTML =
-    "<h4>Hours Summary</h4><table><tr><th>Mentor</th><th>1st Pay Period</th><th>2nd Pay Period</th><th>Wanted</th><th>Days Off</th></tr>";
+    "<h4>Hours Summary</h4><table><tr><th>Mentor</th><th>Total Hours</th><th>Weekly Target</th><th>Monthly Target</th><th>Difference</th><th>Days Off</th></tr>";
 
-  // Create array of mentor pairs and sort by name
-  const mentorPairs = [];
-  for (let i = 0; i < schedule.m1.length; i++) {
-    mentorPairs.push({ m1: schedule.m1[i], m2: schedule.m2[i] });
-  }
-  mentorPairs.sort((a, b) => a.m1.name.localeCompare(b.m1.name));
+  // Sort mentors by name
+  const sortedMentorNames = Object.keys(mentorData).sort();
 
   // Build table rows in sorted order
-  for (const { m1, m2 } of mentorPairs) {
-    const p1Hours = mentorHours[m1.name]?.p1 || 0;
-    const p2Hours = mentorHours[m1.name]?.p2 || 0;
+  for (const name of sortedMentorNames) {
+    const data = mentorData[name];
+    const monthlyTarget = (data.hoursWantedPerWeek * numWeeksInMonth).toFixed(1);
+    const diff = data.totalHours - parseFloat(monthlyTarget);
+    const diffStr = diff >= 0 ? `+${diff.toFixed(1)}` : diff.toFixed(1);
+    const diffClass = Math.abs(diff) > 5 ? 'style="color: orange; font-weight: bold;"' : '';
     
     summaryHTML += `
       <tr>
-        <td>${m1.name}</td>
-        <td>${p1Hours}</td>
-        <td>${p2Hours}</td>
-        <td>${m1.hoursWanted}</td>
-        <td>${[...m1.hardDates, ...m2.hardDates]
-          .sort((a, b) => a - b)
-          .join(", ")}</td>
+        <td>${name}</td>
+        <td>${data.totalHours.toFixed(1)}</td>
+        <td>${data.hoursWantedPerWeek}</td>
+        <td>${monthlyTarget}</td>
+        <td ${diffClass}>${diffStr}</td>
+        <td>${data.daysOff.sort((a, b) => a - b).join(", ") || "None"}</td>
       </tr>
     `;
   }
@@ -1013,137 +1047,70 @@ function showMentorDropdown(span, day, shift, currentName) {
 async function updateScheduleMentor(day, shift, newName) {
   if (!currentSchedule || !currentSchedule.schedule) return;
   
-  // Find the day in assignedDays
-  const assignedDay = currentSchedule.schedule.assignedDays.find(
-    d => d.dateInfo.getDate() === day
-  );
+  // Helper to get day number from a date (handles both Date objects and ISO strings)
+  const getDayNum = (d) => {
+    const dateInfo = d.dateInfo || d.date;
+    if (typeof dateInfo === 'string') {
+      return new Date(dateInfo).getDate();
+    } else if (typeof dateInfo.getDate === 'function') {
+      return dateInfo.getDate();
+    }
+    return null;
+  };
   
-  if (assignedDay) {
-    // Update the mentor (handle null for empty assignments)
+  // Create a new mentor object
+  const createMentorObj = (name) => {
+    if (!name) return null;
+    return {
+      name: name,
+      hoursWantedPerWeek: mentorInfoData[name]?.hours_wanted || 0,
+      hoursWanted: mentorInfoData[name]?.hours_wanted || 0,
+      hardDates: mentorInfoData[name]?.hard_dates || [],
+      unavailableDates: mentorInfoData[name]?.hard_dates || [],
+      unavailableWeekdays: mentorInfoData[name]?.weekdays || [],
+      softDates: [],
+      hoursPay: 0,
+      hoursAssigned: 0,
+      daysLeft: 0,
+      preferredWeekdays: mentorInfoData[name]?.preferred_weekdays || [],
+      preferredWeekday: mentorInfoData[name]?.preferred_weekdays?.[0] || null
+    };
+  };
+  
+  // Update the assignment in all arrays that might contain this day
+  const updateDay = (dayObj) => {
+    if (!dayObj || !dayObj.mentorsOnShift) return;
+    
     if (newName === null || newName === "") {
-      assignedDay.mentorsOnShift[shift] = null;
-    } else if (assignedDay.mentorsOnShift[shift]) {
-      assignedDay.mentorsOnShift[shift].name = newName;
+      dayObj.mentorsOnShift[shift] = null;
     } else {
-      // Create a new mentor object if slot was previously empty
-      assignedDay.mentorsOnShift[shift] = {
-        name: newName,
-        hoursWanted: mentorInfoData[newName]?.hours_wanted * 2 || 0,
-        hardDates: [],
-        softDates: [],
-        hoursPay: 0,
-        daysLeft: 0,
-        preferredWeekdays: []
-      };
+      // Always create a fresh mentor object to avoid reference issues
+      dayObj.mentorsOnShift[shift] = createMentorObj(newName);
     }
-    
-    // Also update in pay1 or pay2 depending on which pay period
-    const pay1Day = currentSchedule.schedule.pay1.find(
-      d => d.dateInfo.getDate() === day
-    );
-    const pay2Day = currentSchedule.schedule.pay2.find(
-      d => d.dateInfo.getDate() === day
-    );
-    
-    if (pay1Day && pay1Day.mentorsOnShift[shift] !== undefined) {
-      if (newName === null || newName === "") {
-        pay1Day.mentorsOnShift[shift] = null;
-      } else if (pay1Day.mentorsOnShift[shift]) {
-        pay1Day.mentorsOnShift[shift].name = newName;
-      } else {
-        pay1Day.mentorsOnShift[shift] = assignedDay.mentorsOnShift[shift];
-      }
-    }
-    if (pay2Day && pay2Day.mentorsOnShift[shift] !== undefined) {
-      if (newName === null || newName === "") {
-        pay2Day.mentorsOnShift[shift] = null;
-      } else if (pay2Day.mentorsOnShift[shift]) {
-        pay2Day.mentorsOnShift[shift].name = newName;
-      } else {
-        pay2Day.mentorsOnShift[shift] = assignedDay.mentorsOnShift[shift];
-      }
-    }
-    
-    // Save updated schedule to Firebase
-    const serializeMentorsOnShift = (mentorsOnShift) => {
-      const serialized = {};
-      for (const [shift, mentor] of Object.entries(mentorsOnShift)) {
-        if (mentor && typeof mentor === 'object' && mentor.name) {
-          serialized[shift] = {
-            name: mentor.name,
-            hoursWanted: mentor.hoursWanted,
-            hardDates: mentor.hardDates,
-            softDates: mentor.softDates,
-            hoursPay: mentor.hoursPay,
-            daysLeft: mentor.daysLeft,
-            preferredWeekdays: mentor.preferredWeekdays
-          };
-        } else {
-          serialized[shift] = mentor;
-        }
-      }
-      return serialized;
-    };
-    
-    const schedule = currentSchedule.schedule;
-    const serializableSchedule = {
-      year: currentSchedule.year,
-      month: currentSchedule.month,
-      schedule: {
-        m1: schedule.m1.map(m => ({
-          name: m.name,
-          hoursWanted: m.hoursWanted,
-          hardDates: m.hardDates,
-          softDates: m.softDates,
-          hoursPay: m.hoursPay,
-          daysLeft: m.daysLeft,
-          preferredWeekdays: m.preferredWeekdays
-        })),
-        m2: schedule.m2.map(m => ({
-          name: m.name,
-          hoursWanted: m.hoursWanted,
-          hardDates: m.hardDates,
-          softDates: m.softDates,
-          hoursPay: m.hoursPay,
-          daysLeft: m.daysLeft,
-          preferredWeekdays: m.preferredWeekdays
-        })),
-        pay1: schedule.pay1.map(d => ({
-          dateInfo: d.dateInfo.toISOString(),
-          weekday: d.weekday,
-          season: d.season,
-          shifts: d.shifts,
-          mentorsOnShift: serializeMentorsOnShift(d.mentorsOnShift),
-          totalHours: d.totalHours,
-          assignedHours: d.assignedHours
-        })),
-        pay2: schedule.pay2.map(d => ({
-          dateInfo: d.dateInfo.toISOString(),
-          weekday: d.weekday,
-          season: d.season,
-          shifts: d.shifts,
-          mentorsOnShift: serializeMentorsOnShift(d.mentorsOnShift),
-          totalHours: d.totalHours,
-          assignedHours: d.assignedHours
-        })),
-        assignedDays: schedule.assignedDays.map(d => ({
-          dateInfo: d.dateInfo.toISOString(),
-          weekday: d.weekday,
-          season: d.season,
-          shifts: d.shifts,
-          mentorsOnShift: serializeMentorsOnShift(d.mentorsOnShift),
-          totalHours: d.totalHours,
-          assignedHours: d.assignedHours
-        })),
-        holidays: schedule.holidays
-      }
-    };
-    
-    // Save to the current schedule structure (by month-year)
-    await saveCurrentSchedule();
-    showToast("Schedule updated");
-    updateHoursSummary(); // Recalculate hours summary with new assignments
+  };
+  
+  // Find and update in assignedDays
+  const assignedDay = currentSchedule.schedule.assignedDays.find(d => getDayNum(d) === day);
+  if (assignedDay) {
+    updateDay(assignedDay);
   }
+  
+  // Find and update in pay1
+  const pay1Day = currentSchedule.schedule.pay1?.find(d => getDayNum(d) === day);
+  if (pay1Day) {
+    updateDay(pay1Day);
+  }
+  
+  // Find and update in pay2
+  const pay2Day = currentSchedule.schedule.pay2?.find(d => getDayNum(d) === day);
+  if (pay2Day) {
+    updateDay(pay2Day);
+  }
+  
+  // Save and update UI
+  await saveCurrentSchedule();
+  showToast("Schedule updated");
+  updateHoursSummary();
 }
 
 // Save current schedule to database
@@ -1212,6 +1179,14 @@ window.saveCurrentSchedule = async function() {
       return serialized;
     }
 
+    // Helper to convert date to ISO string (handles both Date objects and strings)
+    function toISOString(dateInfo) {
+      if (!dateInfo) return null;
+      if (typeof dateInfo === 'string') return dateInfo;
+      if (typeof dateInfo.toISOString === 'function') return dateInfo.toISOString();
+      return new Date(dateInfo).toISOString();
+    }
+
     const serializableSchedule = removeUndefined({
       campusId: CAMPUS_ID,
       year: currentSchedule.year,
@@ -1223,29 +1198,29 @@ window.saveCurrentSchedule = async function() {
         lenP1: schedule.lenP1,
         lenP2: schedule.lenP2,
         pay1: schedule.pay1.map(d => removeUndefined({
-          dateInfo: d.dateInfo.toISOString(),
+          dateInfo: toISOString(d.dateInfo || d.date),
           weekday: d.weekday,
           season: d.season,
           shifts: d.shifts,
-          mentorsOnShift: serializeMentorsOnShift(d.mentorsOnShift),
+          mentorsOnShift: serializeMentorsOnShift(d.mentorsOnShift || {}),
           totalHours: d.totalHours,
           assignedHours: d.assignedHours
         })),
         pay2: schedule.pay2.map(d => removeUndefined({
-          dateInfo: d.dateInfo.toISOString(),
+          dateInfo: toISOString(d.dateInfo || d.date),
           weekday: d.weekday,
           season: d.season,
           shifts: d.shifts,
-          mentorsOnShift: serializeMentorsOnShift(d.mentorsOnShift),
+          mentorsOnShift: serializeMentorsOnShift(d.mentorsOnShift || {}),
           totalHours: d.totalHours,
           assignedHours: d.assignedHours
         })),
         assignedDays: schedule.assignedDays.map(d => removeUndefined({
-          dateInfo: d.dateInfo.toISOString(),
+          dateInfo: toISOString(d.dateInfo || d.date),
           weekday: d.weekday,
           season: d.season,
           shifts: d.shifts,
-          mentorsOnShift: serializeMentorsOnShift(d.mentorsOnShift),
+          mentorsOnShift: serializeMentorsOnShift(d.mentorsOnShift || {}),
           totalHours: d.totalHours,
           assignedHours: d.assignedHours
         })),
