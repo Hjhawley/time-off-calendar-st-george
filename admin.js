@@ -807,8 +807,7 @@ function displaySchedule() {
   const firstDay = new Date(year, month - 1, 1).getDay();
   const daysInMonth = new Date(year, month, 0).getDate();
 
-  // Track weeks for copy-as-image functionality
-  const weeksList = [];
+  // Track current week days for copy-as-image functionality
   let currentWeekDays = [];
 
   // Prev/next month info for cross-month screenshot support
@@ -822,22 +821,19 @@ function displaySchedule() {
 
   function appendWeekToTable(row, weekDays) {
     const weekData = { weekDays: [...weekDays], row };
-    weeksList.push(weekData);
-
-    const weekWrapper = document.createElement("div");
-    weekWrapper.className = "week-wrapper";
-    weekWrapper.appendChild(row);
 
     const copyBtn = document.createElement("button");
     copyBtn.className = "copy-week-btn";
+    copyBtn.type = "button";
     copyBtn.title = "Copy week as image";
+    copyBtn.setAttribute("aria-label", "Copy week as image");
     copyBtn.innerHTML = copyIconSVG;
     copyBtn.addEventListener("click", (e) => {
       e.stopPropagation();
       captureWeekImage(weekData, copyBtn);
     });
-    weekWrapper.appendChild(copyBtn);
-    table.appendChild(weekWrapper);
+    row.appendChild(copyBtn);
+    table.appendChild(row);
   }
 
   // Create calendar grid
@@ -1130,22 +1126,31 @@ async function captureWeekImage(weekInfo, btn) {
     screenshotEl.style.width = "1200px";
     document.body.appendChild(screenshotEl);
 
-    const canvas = await window.html2canvas(screenshotEl, {
-      scale: 2,
-      useCORS: true,
-      logging: false,
-      backgroundColor: "#ffffff",
-    });
-
-    document.body.removeChild(screenshotEl);
+    let canvas;
+    try {
+      canvas = await window.html2canvas(screenshotEl, {
+        scale: 2,
+        useCORS: true,
+        logging: false,
+        backgroundColor: "#ffffff",
+      });
+    } finally {
+      if (screenshotEl.parentNode) {
+        screenshotEl.parentNode.removeChild(screenshotEl);
+      }
+    }
 
     // Try clipboard API first, fall back to download
     let copied = false;
-    if (navigator.clipboard?.write) {
+    if (navigator.clipboard?.write && window.ClipboardItem) {
       try {
         await new Promise((resolve, reject) => {
           canvas.toBlob(async (blob) => {
             try {
+              if (!blob) {
+                reject(new Error("Canvas toBlob returned null"));
+                return;
+              }
               await navigator.clipboard.write([new ClipboardItem({ "image/png": blob })]);
               copied = true;
               resolve();

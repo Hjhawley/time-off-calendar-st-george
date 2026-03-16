@@ -318,6 +318,7 @@
   display: grid;
   grid-template-columns: repeat(7, 1fr);
   border-bottom: 1px solid var(--border-color, #ddd);
+  position: relative;
 }
 
 .schedule-row:last-child {
@@ -567,10 +568,6 @@
 }
 
 /* Week copy button */
-.week-wrapper {
-  position: relative;
-}
-
 .copy-week-btn {
   position: absolute;
   top: 4px;
@@ -591,7 +588,9 @@
   z-index: 10;
 }
 
-.week-wrapper:hover .copy-week-btn {
+.schedule-row:hover .copy-week-btn,
+.schedule-row:focus-within .copy-week-btn,
+.copy-week-btn:focus-visible {
   opacity: 1;
 }
 
