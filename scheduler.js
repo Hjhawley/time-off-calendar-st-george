@@ -277,12 +277,13 @@ class Day {
  * Schedule class - main scheduler
  */
 class Schedule {
-  constructor(year, month, lenP1, seasonalShiftInfo, mentorInfoData, holidays) {
+  constructor(year, month, lenP1, seasonalShiftInfo, mentorInfoData, holidays, noMentorDays = []) {
     this.year = year;
     this.month = month; // 1-indexed
     this.lenP1 = lenP1; // For compatibility (not used in new logic)
     this.seasonalShiftInfo = seasonalShiftInfo;
-    
+    this.noMentorDays = noMentorDays || [];
+
     // Ensure holidays has proper structure
     this.holidays = holidays || { dates: [], shift_info: {} };
     if (!this.holidays.dates) this.holidays.dates = [];
@@ -364,12 +365,17 @@ class Schedule {
       const date = new Date(this.year, this.month - 1, dayNum);
       const weekdayName = ['Sunday', 'Monday', 'Tuesday', 'Wednesday', 'Thursday', 'Friday', 'Saturday'][date.getDay()];
       
+      // Check if no-mentor day (facility closed — no assignments at all)
+      const isNoMentorDay = this.noMentorDays.includes(dayNum);
+
       // Check if holiday
-      const isHoliday = this.holidays.dates.includes(dayNum);
-      
+      const isHoliday = !isNoMentorDay && this.holidays.dates.includes(dayNum);
+
       // Get shifts for this day
       let shifts;
-      if (isHoliday && this.holidays.shift_info && Object.keys(this.holidays.shift_info).length > 0) {
+      if (isNoMentorDay) {
+        shifts = {};
+      } else if (isHoliday && this.holidays.shift_info && Object.keys(this.holidays.shift_info).length > 0) {
         shifts = { ...this.holidays.shift_info };
       } else {
         // Use regular schedule for the season and weekday
@@ -382,8 +388,9 @@ class Schedule {
           shifts = {};
         }
       }
-      
+
       const day = new Day(date, shifts, isHoliday);
+      day.isNoMentorDay = isNoMentorDay;
       day.season = this.season; // Set season for compatibility
       days.push(day);
     }
