@@ -346,13 +346,13 @@
 
 .schedule-cell.no-mentor-day {
   background-color: var(--empty-cell-bg, #f0f0f0);
-  opacity: 0.6;
+  color: var(--text-color, #333);
 }
 
 .no-mentor-label {
   font-size: 0.75rem;
   font-style: italic;
-  color: #999;
+  color: #666;
   margin-top: 0.4rem;
 }
 

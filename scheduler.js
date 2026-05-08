@@ -282,7 +282,9 @@ class Schedule {
     this.month = month; // 1-indexed
     this.lenP1 = lenP1; // For compatibility (not used in new logic)
     this.seasonalShiftInfo = seasonalShiftInfo;
-    this.noMentorDays = noMentorDays || [];
+    this.noMentorDays = Array.isArray(noMentorDays)
+      ? noMentorDays.map(d => Number(d)).filter(d => Number.isInteger(d))
+      : [];
 
     // Ensure holidays has proper structure
     this.holidays = holidays || { dates: [], shift_info: {} };
