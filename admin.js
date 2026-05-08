@@ -521,6 +521,9 @@ window.generateSchedule = async function () {
   const holidayDates = parseHolidayDates(
     document.getElementById("holidays").value
   );
+  const noMentorDays = parseHolidayDates(
+    document.getElementById("no-mentor-days").value
+  );
 
   if (!year || year < 2020 || year > 2100) {
     showToast("Please enter a valid year");
@@ -556,7 +559,8 @@ window.generateSchedule = async function () {
       15, // Pay period length
       SEASONAL_SHIFT_INFO,
       mentorInfoData,
-      holidays
+      holidays,
+      noMentorDays
     );
 
     currentSchedule = {
@@ -646,11 +650,12 @@ window.generateSchedule = async function () {
           totalHours: d.totalHours,
           assignedHours: d.assignedHours
         })),
-        holidays: schedule.holidays || { shift_info: {}, dates: [] }
+        holidays: schedule.holidays || { shift_info: {}, dates: [] },
+        noMentorDays: schedule.noMentorDays || []
       },
       validationMessages: schedule.validationMessages || []
     };
-    
+
     statusDiv.textContent = "Schedule generated successfully!";
     statusDiv.className = "status-message success";
 
@@ -849,6 +854,8 @@ function displaySchedule() {
     currentRow.appendChild(emptyCell);
   }
 
+  const noMentorDays = schedule.noMentorDays || [];
+
   // Fill in days
   for (let day = 1; day <= daysInMonth; day++) {
     const assignedDay = schedule.assignedDays.find((d) => {
@@ -860,8 +867,13 @@ function displaySchedule() {
     const cell = document.createElement("div");
     cell.className = "schedule-cell";
 
+    const isNoMentorDay = noMentorDays.includes(day);
+    if (isNoMentorDay) {
+      cell.classList.add("no-mentor-day");
+    }
+
     // Check if it's a holiday
-    const isHoliday = schedule.holidays && schedule.holidays.dates && schedule.holidays.dates.includes(day);
+    const isHoliday = !isNoMentorDay && schedule.holidays && schedule.holidays.dates && schedule.holidays.dates.includes(day);
     if (isHoliday) {
       cell.classList.add("holiday");
     }
@@ -871,7 +883,12 @@ function displaySchedule() {
     dateLabel.textContent = day;
     cell.appendChild(dateLabel);
 
-    if (assignedDay) {
+    if (isNoMentorDay) {
+      const noMentorLabel = document.createElement("div");
+      noMentorLabel.className = "no-mentor-label";
+      noMentorLabel.textContent = "No Scheduling";
+      cell.appendChild(noMentorLabel);
+    } else if (assignedDay) {
       // Display shift information without time ranges (times are in header)
       const shiftsDiv = document.createElement("div");
       shiftsDiv.className = "schedule-shifts";
@@ -1529,7 +1546,8 @@ window.saveCurrentSchedule = async function() {
           totalHours: d.totalHours,
           assignedHours: d.assignedHours
         })),
-        holidays: schedule.holidays || { shift_info: {}, dates: [] }
+        holidays: schedule.holidays || { shift_info: {}, dates: [] },
+        noMentorDays: schedule.noMentorDays || []
       },
       validationMessages: currentSchedule.validationMessages || []
     });
