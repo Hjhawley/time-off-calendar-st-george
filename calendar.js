@@ -1,37 +1,35 @@
-import {
-  db,
-  doc,
-  setDoc,
-  getDoc,
-  onSnapshot,
-  createBackup,
-} from "./firebase.js";
+import { db, doc, setDoc, getDoc, onSnapshot } from "./firebase.js";
 import { CAMPUS_ID } from "./config.js";
 import { showToast, updateDayStyles } from "./ui.js";
+import {
+  MONTH_NAMES,
+  monthKey,
+  isMonthKeyed,
+  getMonthSlice,
+  migrateFlatTimeOff,
+  normalizeSlots,
+} from "./dates.js";
 
-let mentors = []; // Will be loaded from Firebase based on show_on_calendar
-let slotsAvailable = 3; // Default, will be loaded from Firebase
-let targetMonth = 0; // 0 = Jan, 1 = Feb etc, will be loaded from Firebase
-let targetYear = 2026; // Will be loaded from Firebase
-let timeOffData = {};
+let mentorInfoData = {};
+let mentors = []; // Names shown in the dropdowns (show_on_calendar !== false)
+let slotsAvailable = 3;
+let targetMonth = 0; // 0 = Jan
+let targetYear = 2026;
+let timeOffAll = {}; // Month-keyed: { "2026-01": { "5": ["Sofia", "", ""] } }
+let timeOffData = {}; // Slice for the target month
+
+function currentMonthKey() {
+  return monthKey(targetYear, targetMonth + 1);
+}
 
 async function loadMentorList() {
   try {
     const docSnap = await getDoc(doc(db, "mentorInfo", CAMPUS_ID));
     if (docSnap.exists()) {
-      const mentorInfoData = docSnap.data()?.mentors || {};
-      console.log("Raw mentor data from Firebase:", mentorInfoData);
-      
-      // Filter mentors where show_on_calendar is true (default to true if not set)
+      mentorInfoData = docSnap.data()?.mentors || {};
       mentors = Object.keys(mentorInfoData)
-        .filter(name => {
-          const showOnCal = mentorInfoData[name].show_on_calendar;
-          // Default to true if undefined, only exclude if explicitly false
-          const shouldShow = showOnCal === undefined ? true : showOnCal;
-          console.log(`Mentor ${name}: show_on_calendar=${showOnCal}, shouldShow=${shouldShow}`);
-          return shouldShow;
-        });
-      console.log("Loaded mentors for calendar:", mentors);
+        .filter((name) => mentorInfoData[name].show_on_calendar !== false)
+        .sort((a, b) => a.localeCompare(b));
     } else {
       console.warn("No mentor info document found in Firebase");
     }
@@ -44,10 +42,13 @@ async function loadTimeOffData() {
   try {
     const docSnap = await getDoc(doc(db, "timeOff", CAMPUS_ID));
     if (docSnap.exists()) {
-      timeOffData = docSnap.data()?.mentors || {};
-      console.log("Loaded Time Off Data:", timeOffData);
-    } else {
-      console.warn("No Time Off Data Found");
+      timeOffAll = docSnap.data()?.mentors || {};
+      // One-time migration: legacy docs were keyed by bare day-of-month
+      if (!isMonthKeyed(timeOffAll)) {
+        timeOffAll = migrateFlatTimeOff(timeOffAll, currentMonthKey());
+        await setDoc(doc(db, "timeOff", CAMPUS_ID), { mentors: timeOffAll });
+      }
+      timeOffData = getMonthSlice(timeOffAll, currentMonthKey());
     }
   } catch (error) {
     console.error("Error loading time off data:", error);
@@ -62,21 +63,9 @@ async function loadSlotsConfig() {
       slotsAvailable = config?.slotsAvailable || 3;
       targetMonth = config?.targetMonth !== undefined ? config.targetMonth : 0;
       targetYear = config?.targetYear || 2026;
-      console.log("Loaded calendar config:", {
-        slotsAvailable,
-        targetMonth,
-        targetYear,
-      });
-    } else {
-      slotsAvailable = 3; // Default
-      targetMonth = 0; // January
-      targetYear = 2026; // Default
     }
   } catch (error) {
     console.error("Error loading calendar config:", error);
-    slotsAvailable = 3; // Default on error
-    targetMonth = 0;
-    targetYear = 2026;
   }
 }
 
@@ -89,30 +78,14 @@ export async function createCalendar() {
   calendar.innerHTML = "";
 
   document.getElementById("campus-name").textContent = `${CAMPUS_ID}`;
-
-  const monthNames = [
-    "January",
-    "February",
-    "March",
-    "April",
-    "May",
-    "June",
-    "July",
-    "August",
-    "September",
-    "October",
-    "November",
-    "December",
-  ];
   document.getElementById(
     "month-name"
-  ).textContent = `${monthNames[targetMonth]} ${targetYear}`;
+  ).textContent = `${MONTH_NAMES[targetMonth]} ${targetYear}`;
 
   const daysInMonth = new Date(targetYear, targetMonth + 1, 0).getDate();
   const firstDay = new Date(targetYear, targetMonth, 1).getDay();
 
-  const daysOfWeek = ["Sun", "Mon", "Tue", "Wed", "Thu", "Fri", "Sat"];
-  daysOfWeek.forEach((day) => {
+  ["Sun", "Mon", "Tue", "Wed", "Thu", "Fri", "Sat"].forEach((day) => {
     const header = document.createElement("div");
     header.className = "header";
     header.textContent = day;
@@ -140,7 +113,7 @@ export async function createCalendar() {
         '<option value="">-</option>' +
         mentors.map((emp) => `<option value="${emp}">${emp}</option>`).join("");
       select.onchange = () => saveTimeOff(day, i, select);
-      if (timeOffData[day] && timeOffData[day][i] !== undefined) {
+      if (timeOffData[day] && timeOffData[day][i]) {
         select.value = timeOffData[day][i];
       }
       dayDiv.appendChild(select);
@@ -154,80 +127,38 @@ export async function createCalendar() {
 
 async function saveTimeOff(day, index, select) {
   const name = select.value;
+  const previous = (timeOffData[day] && timeOffData[day][index]) || "";
   const dayDiv = select.parentElement;
   const selects = dayDiv.querySelectorAll("select");
 
   for (let i = 0; i < selects.length; i++) {
     if (i !== index && selects[i].value === name && name !== "") {
       showToast(`${name} already claimed a slot for this day.`);
-      select.value = "";
+      select.value = previous;
       return;
     }
   }
 
   try {
-    if (!timeOffData[day]) timeOffData[day] = Array(slotsAvailable).fill("");
+    timeOffData[day] = normalizeSlots(timeOffData[day], slotsAvailable);
     timeOffData[day][index] = name;
+    timeOffAll[currentMonthKey()] = timeOffData;
 
-    await setDoc(doc(db, "timeOff", CAMPUS_ID), { mentors: timeOffData });
-    await createBackup(timeOffData);
+    await setDoc(doc(db, "timeOff", CAMPUS_ID), { mentors: timeOffAll });
 
     showToast("Saved!");
     updateDayStyles();
   } catch (error) {
     console.error("Error saving time-off data:", error);
-  }
-}
-
-export function generateReport() {
-  let report = "";
-  let mentorRequests = {};
-
-  Object.keys(timeOffData).forEach((day) => {
-    timeOffData[day].forEach((name) => {
-      if (name && name !== "") {
-        if (!mentorRequests[name]) mentorRequests[name] = [];
-        mentorRequests[name].push(day);
-      }
-    });
-  });
-
-  Object.keys(mentorRequests).forEach((name) => {
-    report += `${name}: ${mentorRequests[name].join(", ")}\n`;
-  });
-
-  document.getElementById("report").textContent = report;
-}
-
-export async function clearAll() {
-  const password = prompt("Enter your name:");
-  if (!["hayden", "topher"].includes(password?.trim().toLowerCase())) {
-    showToast("Incorrect.");
-    return;
-  }
-
-  if (
-    !confirm(
-      "Are you sure you want to clear all entries? This is a pain in the butt to undo."
-    )
-  )
-    return;
-
-  try {
-    await createBackup(timeOffData, "manual-clear");
-    timeOffData = {};
-    await setDoc(doc(db, "timeOff", CAMPUS_ID), { mentors: timeOffData });
-    showToast("All entries cleared.");
-    createCalendar();
-  } catch (error) {
-    console.error("Failed to clear all data:", error);
-    showToast("Failed to clear.");
+    showToast("Could not save. Please try again.");
+    select.value = previous;
   }
 }
 
 onSnapshot(doc(db, "timeOff", CAMPUS_ID), (docSnap) => {
   if (docSnap.exists()) {
-    timeOffData = docSnap.data()?.mentors || {};
+    timeOffAll = migrateFlatTimeOff(docSnap.data()?.mentors || {}, currentMonthKey());
+    timeOffData = getMonthSlice(timeOffAll, currentMonthKey());
     createCalendar();
   }
 });

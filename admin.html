@@ -43,17 +43,30 @@
       <div class="tabs">
         <button
           class="tab-button active"
+          data-tab="mentor-management"
           onclick="showTab('mentor-management')"
         >
           Mentor Management
         </button>
-        <button class="tab-button" onclick="showTab('schedule-generation')">
+        <button
+          class="tab-button"
+          data-tab="schedule-generation"
+          onclick="showTab('schedule-generation')"
+        >
           Generate Schedule
         </button>
-        <button class="tab-button" onclick="showTab('view-schedule')">
+        <button
+          class="tab-button"
+          data-tab="view-schedule"
+          onclick="showTab('view-schedule')"
+        >
           View Schedule
         </button>
-        <button class="tab-button" onclick="showTab('calendar-management')">
+        <button
+          class="tab-button"
+          data-tab="calendar-management"
+          onclick="showTab('calendar-management')"
+        >
           Calendar Management
         </button>
       </div>
@@ -80,12 +93,12 @@
           </div>
 
           <div class="form-group">
-            <label>Dates Unavailable (from Time-Off Calendar):</label>
+            <label>Requested Days Off (from Time-Off Calendar):</label>
             <div id="hard-dates-display" class="dates-display"></div>
           </div>
 
           <div class="form-group">
-            <label>Weekdays Unavailable:</label>
+            <label>Weekdays Unavailable (every week):</label>
             <div class="checkbox-group" id="weekdays-unavailable">
               <label><input type="checkbox" value="Sunday" /> Sunday</label>
               <label><input type="checkbox" value="Monday" /> Monday</label>
@@ -97,6 +110,7 @@
               <label><input type="checkbox" value="Friday" /> Friday</label>
               <label><input type="checkbox" value="Saturday" /> Saturday</label>
             </div>
+            <div id="recurring-dates-display" class="dates-display recurring-display"></div>
           </div>
 
           <div class="form-group">
@@ -115,15 +129,15 @@
 
           <div class="form-group">
             <label>
-              <input type="checkbox" id="auto-fill-calendar" />
-              Auto-fill this mentor's unavailable dates on employee calendar
+              <input type="checkbox" id="show-on-calendar" />
+              Show this mentor on the employee calendar (allow them to request days off)
             </label>
           </div>
 
           <div class="form-group">
             <label>
-              <input type="checkbox" id="show-on-calendar" />
-              Show this mentor on the employee calendar (allow them to request days off)
+              <input type="checkbox" id="include-in-scheduling" />
+              Include this mentor when generating schedules
             </label>
           </div>
 
@@ -191,9 +205,9 @@
         <h2>Current Schedule</h2>
         <div id="schedule-info"></div>
         
-        <div id="hours-summary" class="hours-summary"></div>
-        
         <div id="schedule-display" class="schedule-calendar"></div>
+
+        <div id="hours-summary" class="hours-summary"></div>
 
         <div class="form-actions" style="margin: 20px 0;">
           <button onclick="saveCurrentSchedule()" class="btn-primary" id="save-schedule-btn">
@@ -269,11 +283,11 @@
         <div class="form-group" style="margin-top: 2rem">
           <h3>Clear Calendar Data</h3>
           <p>
-            This will clear all time-off entries from the employee calendar and
-            auto-populate based on mentor settings with auto-fill enabled.
+            This will clear all time-off entries for the currently configured
+            calendar month. Other months are not affected.
           </p>
           <button onclick="clearCalendar()" class="btn-danger">
-            Clear Calendar & Auto-Fill
+            Clear Current Month
           </button>
         </div>
 
