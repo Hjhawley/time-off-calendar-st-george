@@ -23,9 +23,13 @@ manages mentor profiles and generates monthly shift schedules from that data.
   Requested days off are shown read-only, pulled from the calendar for the
   currently configured month.
 - **Generate Schedule**: pick year/month, adjust holidays (defaults computed
-  per year), generate. Requested days off for that specific month are honored.
+  per year), optionally list "no scheduling" days (facility closed - no shifts
+  at all; accepts lists and ranges like `4,15,20-22`), generate. Requested
+  days off for that specific month are honored.
 - **View Schedule**: calendar display with per-shift assignments, click any
-  name to reassign, hours summary table, validation log. Manual edits are kept
+  name to reassign, hours summary table, validation log. Hovering a week row
+  shows a copy button that captures that week as an image to the clipboard
+  (falls back to a PNG download). Manual edits are kept
   in memory until you click "Save Schedule"; leaving the page with unsaved
   edits prompts a warning.
 - **Calendar Management**: set the month/year the employee calendar shows,

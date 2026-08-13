@@ -184,6 +184,11 @@
             <input type="text" id="holidays" placeholder="e.g., 24,25,31" />
           </div>
 
+          <div class="form-group">
+            <label for="no-mentor-days">No Scheduling Days (comma-separated dates):</label>
+            <input type="text" id="no-mentor-days" placeholder="e.g., 4,15,20-22" />
+          </div>
+
           <div class="form-actions">
             <button onclick="generateSchedule()" class="btn-primary btn-large">
               Generate Schedule
@@ -297,6 +302,12 @@
 
     <div id="toast" class="toast hidden"></div>
 
+    <script
+      src="https://cdnjs.cloudflare.com/ajax/libs/html2canvas/1.4.1/html2canvas.min.js"
+      integrity="sha512-BNaRQnYJYiPSqHHDb58B0yaPfCu+Wgds8Gp/gU33kqBtgNS4tSPHuGibyoeqMV/TJlSKda6FXzoEyYGjTe+vXA=="
+      crossorigin="anonymous"
+      referrerpolicy="no-referrer"
+    ></script>
     <script type="module" src="admin.js"></script>
     <script src="theme-toggle.js"></script>
   </body>

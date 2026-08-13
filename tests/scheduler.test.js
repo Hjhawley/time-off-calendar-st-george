@@ -167,6 +167,32 @@ test("mentors with include_in_scheduling false are never scheduled", () => {
   }
 });
 
+test("no-scheduling days have no shifts and get no assignments", () => {
+  const s = new Schedule(2026, 1, SHIFT_INFO, MENTORS, { shift_info: {}, dates: [] }, [5, 6]);
+  for (const dayNum of [5, 6]) {
+    const day = s.assignedDays.find((d) => d.dayOfMonth === dayNum);
+    assert.equal(day.isNoMentorDay, true);
+    assert.deepEqual(day.shifts, {});
+    assert.deepEqual(Object.values(day.mentorsOnShift), []);
+  }
+  const day7 = s.assignedDays.find((d) => d.dayOfMonth === 7);
+  assert.ok(Object.keys(day7.shifts).length > 0);
+});
+
+test("a no-scheduling day overrides a holiday on the same date", () => {
+  const s = new Schedule(
+    2026,
+    1,
+    SHIFT_INFO,
+    MENTORS,
+    { shift_info: { holiday_a_shift: 9, holiday_b_shift: 9 }, dates: [5] },
+    [5]
+  );
+  const day = s.assignedDays.find((d) => d.dayOfMonth === 5);
+  assert.equal(day.isHoliday, false);
+  assert.deepEqual(day.shifts, {});
+});
+
 test("holiday dates use holiday shifts", () => {
   const s = new Schedule(2026, 1, SHIFT_INFO, MENTORS, {
     shift_info: { holiday_a_shift: 9, holiday_b_shift: 9 },

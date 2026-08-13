@@ -51,6 +51,9 @@ function computeNationalHolidays(year) {
   };
 }
 
+const COPY_ICON_SVG = `<svg xmlns="http://www.w3.org/2000/svg" width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><rect x="9" y="9" width="13" height="13" rx="2" ry="2"></rect><path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1"></path></svg>`;
+const CHECK_ICON_SVG = `<svg xmlns="http://www.w3.org/2000/svg" width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><polyline points="20 6 9 17 4 12"></polyline></svg>`;
+
 const SEASONAL_SHIFT_INFO = {
   summer: {
     shift_info: {
@@ -495,6 +498,10 @@ window.generateSchedule = async function () {
     document.getElementById("holidays").value,
     daysInMonth
   );
+  const noMentorDays = parseHolidayDates(
+    document.getElementById("no-mentor-days").value,
+    daysInMonth
+  );
 
   // Requested days off come from the calendar slice for the month being generated
   const scheduleKey = monthKey(year, month);
@@ -515,7 +522,14 @@ window.generateSchedule = async function () {
       dates: holidayDates,
     };
 
-    const schedule = new Schedule(year, month, SEASONAL_SHIFT_INFO, mentorInfoData, holidays);
+    const schedule = new Schedule(
+      year,
+      month,
+      SEASONAL_SHIFT_INFO,
+      mentorInfoData,
+      holidays,
+      noMentorDays
+    );
 
     currentSchedule = {
       year: year,
@@ -624,14 +638,43 @@ function displaySchedule() {
   const firstDay = new Date(year, month - 1, 1).getDay();
   const daysInMonth = new Date(year, month, 0).getDate();
 
+  // Week membership is tracked per row so each row's copy button can rebuild
+  // that week (including adjacent-month days) for the screenshot
+  const prevMonthYear = month === 1 ? year - 1 : year;
+  const prevMonthNum = month === 1 ? 12 : month - 1;
+  const nextMonthYear = month === 12 ? year + 1 : year;
+  const nextMonthNum = month === 12 ? 1 : month + 1;
+  const prevMonthTotalDays = new Date(prevMonthYear, prevMonthNum, 0).getDate();
+  let currentWeekDays = [];
+
+  function appendWeekToTable(row, weekDays) {
+    const weekData = { weekDays: [...weekDays] };
+    const copyBtn = document.createElement("button");
+    copyBtn.className = "copy-week-btn";
+    copyBtn.type = "button";
+    copyBtn.title = "Copy week as image";
+    copyBtn.setAttribute("aria-label", "Copy week as image");
+    copyBtn.innerHTML = COPY_ICON_SVG;
+    copyBtn.addEventListener("click", (e) => {
+      e.stopPropagation();
+      captureWeekImage(weekData, copyBtn);
+    });
+    row.appendChild(copyBtn);
+    table.appendChild(row);
+  }
+
   let currentRow = document.createElement("div");
   currentRow.className = "schedule-row";
 
   for (let i = 0; i < firstDay; i++) {
+    const prevDay = prevMonthTotalDays - firstDay + i + 1;
+    currentWeekDays.push({ day: prevDay, month: prevMonthNum, year: prevMonthYear, isOtherMonth: true });
     const emptyCell = document.createElement("div");
     emptyCell.className = "schedule-cell empty";
     currentRow.appendChild(emptyCell);
   }
+
+  const noMentorDays = schedule.noMentorDays || [];
 
   for (let day = 1; day <= daysInMonth; day++) {
     const assignedDay = schedule.assignedDays.find((d) => d.dateInfo.getDate() === day);
@@ -639,7 +682,13 @@ function displaySchedule() {
     const cell = document.createElement("div");
     cell.className = "schedule-cell";
 
+    const isNoMentorDay = noMentorDays.includes(day);
+    if (isNoMentorDay) {
+      cell.classList.add("no-mentor-day");
+    }
+
     const isHoliday =
+      !isNoMentorDay &&
       schedule.holidays && schedule.holidays.dates && schedule.holidays.dates.includes(day);
     if (isHoliday) {
       cell.classList.add("holiday");
@@ -650,7 +699,12 @@ function displaySchedule() {
     dateLabel.textContent = day;
     cell.appendChild(dateLabel);
 
-    if (assignedDay) {
+    if (isNoMentorDay) {
+      const noMentorLabel = document.createElement("div");
+      noMentorLabel.className = "no-mentor-label";
+      noMentorLabel.textContent = "No Scheduling";
+      cell.appendChild(noMentorLabel);
+    } else if (assignedDay) {
       const shiftsDiv = document.createElement("div");
       shiftsDiv.className = "schedule-shifts";
 
@@ -688,17 +742,27 @@ function displaySchedule() {
       cell.appendChild(shiftsDiv);
     }
 
+    currentWeekDays.push({ day, month, year, isOtherMonth: false });
     currentRow.appendChild(cell);
 
     if ((firstDay + day) % 7 === 0) {
-      table.appendChild(currentRow);
+      appendWeekToTable(currentRow, currentWeekDays);
       currentRow = document.createElement("div");
       currentRow.className = "schedule-row";
+      currentWeekDays = [];
     }
   }
 
   if (currentRow.children.length > 0) {
-    table.appendChild(currentRow);
+    let nextDay = 1;
+    while (currentRow.children.length < 7) {
+      currentWeekDays.push({ day: nextDay, month: nextMonthNum, year: nextMonthYear, isOtherMonth: true });
+      const emptyCell = document.createElement("div");
+      emptyCell.className = "schedule-cell empty";
+      currentRow.appendChild(emptyCell);
+      nextDay++;
+    }
+    appendWeekToTable(currentRow, currentWeekDays);
   }
 
   container.appendChild(table);
@@ -711,6 +775,231 @@ function displaySchedule() {
   container.appendChild(legend);
 
   updateHoursSummary();
+}
+
+// Load a saved schedule for an adjacent month (used by week screenshots)
+async function loadScheduleForMonth(year, month) {
+  try {
+    const docSnap = await getDoc(doc(db, "savedSchedules", `${CAMPUS_ID}_${month}_${year}`));
+    if (docSnap.exists()) {
+      const schedule = docSnap.data().schedule;
+      schedule.mentors = schedule.mentors || schedule.m1 || [];
+      return schedule;
+    }
+  } catch (error) {
+    console.error("Failed to load adjacent month schedule:", error);
+  }
+  return null;
+}
+
+// Build a static (non-interactive) schedule cell for the week screenshot
+function buildStaticDayCell(day, scheduleData, isOtherMonth) {
+  const cell = document.createElement("div");
+  cell.className = "schedule-cell" + (isOtherMonth && !scheduleData ? " empty" : "");
+
+  if (isOtherMonth) {
+    cell.style.opacity = "0.65";
+    if (!scheduleData) return cell;
+  }
+
+  const dateLabel = document.createElement("div");
+  dateLabel.className = "schedule-date";
+  dateLabel.textContent = day;
+  cell.appendChild(dateLabel);
+
+  if (!scheduleData || !scheduleData.assignedDays) return cell;
+
+  if ((scheduleData.noMentorDays || []).includes(day)) {
+    cell.classList.add("no-mentor-day");
+    const noMentorLabel = document.createElement("div");
+    noMentorLabel.className = "no-mentor-label";
+    noMentorLabel.textContent = "No Scheduling";
+    cell.appendChild(noMentorLabel);
+    return cell;
+  }
+
+  const assignedDay = scheduleData.assignedDays.find((d) => {
+    const dateInfo = d.dateInfo || d.date;
+    const dayNum =
+      typeof dateInfo?.getDate === "function" ? dateInfo.getDate() : new Date(dateInfo).getDate();
+    return dayNum === day;
+  });
+
+  if (scheduleData.holidays?.dates?.includes(day)) {
+    cell.classList.add("holiday");
+  }
+
+  if (assignedDay) {
+    const shiftsDiv = document.createElement("div");
+    shiftsDiv.className = "schedule-shifts";
+
+    const shiftOrder = ["a_shift", "b_shift", "c_shift", "holiday_a_shift", "holiday_b_shift"];
+    const sortedShifts = Object.entries(assignedDay.mentorsOnShift || {}).sort((a, b) => {
+      const indexA = shiftOrder.indexOf(a[0]);
+      const indexB = shiftOrder.indexOf(b[0]);
+      return (indexA === -1 ? 999 : indexA) - (indexB === -1 ? 999 : indexB);
+    });
+
+    for (const [shift, mentor] of sortedShifts) {
+      const shiftDiv = document.createElement("div");
+      shiftDiv.className = "schedule-shift";
+      const shiftLabel = shift.replace("_shift", "").replace("holiday_", "").toUpperCase();
+      if (mentor) {
+        shiftDiv.textContent = `${shiftLabel} - ${mentor.name}`;
+      } else {
+        shiftDiv.textContent = `${shiftLabel} - (Empty)`;
+        shiftDiv.style.color = "#999";
+        shiftDiv.style.fontStyle = "italic";
+      }
+      shiftsDiv.appendChild(shiftDiv);
+    }
+    cell.appendChild(shiftsDiv);
+  }
+
+  return cell;
+}
+
+// Build the off-screen DOM element used for screenshot capture
+function buildWeekScreenshot(weekInfo, prevScheduleData, nextScheduleData) {
+  const { year, month } = currentSchedule;
+
+  const container = document.createElement("div");
+  container.style.cssText =
+    "position:fixed;left:-9999px;top:0;z-index:-1;background:#fff;font-family:sans-serif;";
+
+  const title = document.createElement("div");
+  title.style.cssText =
+    "text-align:center;font-weight:bold;font-size:15px;padding:8px 12px;background:#495057;color:white;";
+  title.textContent = `${MONTH_NAMES[month - 1]} ${year}`;
+  container.appendChild(title);
+
+  const table = document.createElement("div");
+  table.className = "schedule-table";
+  table.style.margin = "0";
+  table.style.borderRadius = "0";
+  table.style.borderTop = "none";
+
+  // Clone the on-page header row so shift times match exactly
+  const origHeader = document.querySelector(".schedule-table .schedule-header-row");
+  if (origHeader) {
+    table.appendChild(origHeader.cloneNode(true));
+  }
+
+  const weekRow = document.createElement("div");
+  weekRow.className = "schedule-row";
+  weekRow.style.borderBottom = "none";
+
+  weekInfo.weekDays.forEach((dayInfo) => {
+    let cell;
+    if (dayInfo.isOtherMonth) {
+      const isPrevMonth =
+        dayInfo.year < year || (dayInfo.year === year && dayInfo.month < month);
+      const adjSchedule = isPrevMonth ? prevScheduleData : nextScheduleData;
+      cell = buildStaticDayCell(dayInfo.day, adjSchedule, true);
+    } else {
+      cell = buildStaticDayCell(dayInfo.day, currentSchedule.schedule, false);
+    }
+    weekRow.appendChild(cell);
+  });
+
+  table.appendChild(weekRow);
+  container.appendChild(table);
+  return container;
+}
+
+// Capture a single week as an image and write to clipboard (fallback: download)
+async function captureWeekImage(weekInfo, btn) {
+  if (!window.html2canvas) {
+    showToast("Screenshot library not loaded. Please refresh the page.");
+    return;
+  }
+
+  if (btn) {
+    btn.classList.add("copying");
+    btn.innerHTML = CHECK_ICON_SVG;
+  }
+
+  try {
+    const { month, year } = currentSchedule;
+
+    let prevScheduleData = null;
+    let nextScheduleData = null;
+
+    const hasPrevMonth = weekInfo.weekDays.some(
+      (d) => d.isOtherMonth && (d.year < year || (d.year === year && d.month < month))
+    );
+    const hasNextMonth = weekInfo.weekDays.some(
+      (d) => d.isOtherMonth && (d.year > year || (d.year === year && d.month > month))
+    );
+
+    if (hasPrevMonth) {
+      const pYear = month === 1 ? year - 1 : year;
+      const pMonth = month === 1 ? 12 : month - 1;
+      prevScheduleData = await loadScheduleForMonth(pYear, pMonth);
+    }
+    if (hasNextMonth) {
+      const nYear = month === 12 ? year + 1 : year;
+      const nMonth = month === 12 ? 1 : month + 1;
+      nextScheduleData = await loadScheduleForMonth(nYear, nMonth);
+    }
+
+    const screenshotEl = buildWeekScreenshot(weekInfo, prevScheduleData, nextScheduleData);
+    screenshotEl.style.width = "1200px";
+    document.body.appendChild(screenshotEl);
+
+    let canvas;
+    try {
+      canvas = await window.html2canvas(screenshotEl, {
+        scale: 2,
+        useCORS: true,
+        logging: false,
+        backgroundColor: "#ffffff",
+      });
+    } finally {
+      screenshotEl.remove();
+    }
+
+    let copied = false;
+    if (navigator.clipboard?.write && window.ClipboardItem) {
+      try {
+        await new Promise((resolve, reject) => {
+          canvas.toBlob(async (blob) => {
+            try {
+              if (!blob) {
+                reject(new Error("Canvas toBlob returned null"));
+                return;
+              }
+              await navigator.clipboard.write([new ClipboardItem({ "image/png": blob })]);
+              copied = true;
+              resolve();
+            } catch (e) {
+              reject(e);
+            }
+          }, "image/png");
+        });
+      } catch (error) {
+        console.warn("Clipboard write failed, downloading instead:", error);
+      }
+    }
+
+    if (copied) {
+      showToast("Week copied to clipboard!");
+    } else {
+      const link = document.createElement("a");
+      link.download = `schedule-${MONTH_NAMES[month - 1]}-${year}-week.png`;
+      link.href = canvas.toDataURL("image/png");
+      link.click();
+      showToast("Downloaded week as image");
+    }
+  } catch (error) {
+    console.error("Failed to capture week image:", error);
+    showToast("Failed to capture image. Please try again.");
+  } finally {
+    if (btn) {
+      btn.classList.remove("copying");
+      btn.innerHTML = COPY_ICON_SVG;
+    }
+  }
 }
 
 // Recalculate the hours summary from current calendar assignments
@@ -899,6 +1188,7 @@ window.saveCurrentSchedule = async function () {
           ),
         })),
         holidays: schedule.holidays || { shift_info: {}, dates: [] },
+        noMentorDays: schedule.noMentorDays || [],
       },
       validationMessages: currentSchedule.validationMessages || [],
     };
