@@ -207,10 +207,16 @@
 .dates-display {
   padding: 0.75rem;
   background-color: var(--display-bg, #f8f9fa);
-  border: 1px solid #ddd;
+  border: 1px solid var(--border-color, #ddd);
   border-radius: 4px;
   min-height: 2rem;
   color: var(--text-color, #333);
+}
+
+.recurring-display {
+  margin-top: 0.75rem;
+  font-size: 0.95rem;
+  line-height: 1.5;
 }
 
 .checkbox-group {
@@ -615,24 +621,22 @@
   opacity: 1;
 }
 
-/* Dark mode support */
-@media (prefers-color-scheme: dark) {
-  :root {
-    --bg-color: #1e1e1e;
-    --text-color: #e0e0e0;
-    --header-bg: #2d2d2d;
-    --border-color: #444;
-    --tab-bg: #2d2d2d;
-    --tab-hover: rgba(255, 255, 255, 0.05);
-    --input-bg: #2d2d2d;
-    --display-bg: #2d2d2d;
-    --cell-bg: #1e1e1e;
-    --empty-cell-bg: #2d2d2d;
-    --shift-bg: #1a3a52;
-    --legend-bg: #2d2d2d;
-    --summary-bg: #2d2d2d;
-    --table-bg: #1e1e1e;
-    --th-bg: #2d2d2d;
-    --row-even-bg: #252525;
-  }
+/* The site forces dark mode (theme-toggle.js), so dark tokens must not
+   depend on the OS prefers-color-scheme setting */
+body.dark-mode {
+  --bg-color: #1e1e1e;
+  --header-bg: #2d2d2d;
+  --border-color: #444;
+  --tab-bg: #2d2d2d;
+  --tab-hover: rgba(255, 255, 255, 0.05);
+  --input-bg: #2d2d2d;
+  --display-bg: #2d2d2d;
+  --cell-bg: #1e1e1e;
+  --empty-cell-bg: #2d2d2d;
+  --shift-bg: #1a3a52;
+  --legend-bg: #2d2d2d;
+  --summary-bg: #2d2d2d;
+  --table-bg: #1e1e1e;
+  --th-bg: #2d2d2d;
+  --row-even-bg: #252525;
 }

@@ -1,134 +1,119 @@
 # NeuroDev Time-Off Calendar
 
 ## Overview
-This project integrates the employee time-off calendar with an admin portal for generating schedules.
 
-## Features
+Static site (plain ES modules, no build step) backed by Firebase Firestore.
+Employees mark days they cannot work on a shared calendar; an admin portal
+manages mentor profiles and generates monthly shift schedules from that data.
+
+## Pages
 
 ### Employee Calendar (index.html)
-- Employees can mark dates they are unavailable
-- Data is stored in Firebase and syncs in real-time
-- Simple, intuitive interface
+
+- Employees pick their name in a slot dropdown on days they cannot work
+- Data syncs in real time via Firestore snapshots
 
 ### Admin Portal (admin.html)
-- **Password Protected**: Access requires admin password (default: "neurodev2025")
-- **Mentor Management**: 
-  - Add/edit/delete mentor information
-  - Set hours wanted per week
-  - Configure weekday availability and preferences
-  - View time-off dates pulled directly from the calendar
-- **Schedule Generation**:
-  - Select month and year
-  - Configure holidays
-  - Generate optimized schedules based on all constraints
-- **Schedule Viewing**:
-  - Calendar-style display matching your provided format
-  - Shows shift assignments (A/B/C shifts)
-  - Displays shift times
-  - Summary table with hours and days off
 
-## How to Use
+- Password protected (password set in `auth.js`)
+- **Mentor Management**: name, hours wanted per week, recurring weekdays
+  unavailable, preferred weekday, whether they appear on the employee calendar,
+  and whether they are included when generating schedules (two independent
+  settings).
+  Requested days off are shown read-only, pulled from the calendar for the
+  currently configured month.
+- **Generate Schedule**: pick year/month, adjust holidays (defaults computed
+  per year), optionally list "no scheduling" days (facility closed - no shifts
+  at all; accepts lists and ranges like `4,15,20-22`), generate. Requested
+  days off for that specific month are honored.
+- **View Schedule**: calendar display with per-shift assignments, click any
+  name to reassign, hours summary table, validation log. Hovering a week row
+  shows a copy button that captures that week as an image to the clipboard
+  (falls back to a PNG download). Manual edits are kept
+  in memory until you click "Save Schedule"; leaving the page with unsaved
+  edits prompts a warning.
+- **Calendar Management**: set the month/year the employee calendar shows,
+  number of slots per day, and clear the current month's entries.
 
-### For Employees:
-1. Visit the main calendar page
-2. Select your name from the dropdowns on days you can't work
-3. Changes are saved automatically
+## Scheduling rules
 
-### For Admins:
-1. Click "Admin Portal" link at the bottom of the main page
-2. Enter admin password (default: "neurodev2025")
-3. **Manage Mentors**:
-   - Select a mentor or create new one
-   - Set their hours wanted per week
-   - Configure their weekday preferences
-   - Dates unavailable are automatically pulled from the employee calendar
-   - Click "Save Mentor"
-4. **Generate Schedule**:
-   - Go to "Generate Schedule" tab
-   - Enter schedule name, year, and month
-   - Adjust holidays if needed (defaults are provided)
-   - Click "Generate Schedule"
-5. **View Schedule**:
-   - Switch to "View Schedule" tab to see the generated calendar
-   - Export or screenshot the schedule as needed
+See `SCHEDULE_MANAGEMENT.md` for the full algorithm. In short:
 
-## Files Added/Modified
-
-### New Files:
-- `admin.html` - Admin portal page
-- `admin.js` - Admin functionality and schedule generation
-- `admin-styles.css` - Admin-specific styling
-- `auth.js` - Authentication system
-- `scheduler.js` - JavaScript port of Python scheduling algorithm
-
-### Modified Files:
-- `index.html` - Removed generate strings button, added admin link
-- `styles.css` - Added admin link styling
-
-### Unchanged Files:
-- `calendar.js` - Employee calendar functionality
-- `firebase.js` - Firebase configuration
-- `config.js` - Campus configuration
-- `ui.js` - UI utilities
-- `theme-toggle.js` - Dark mode toggle
-
-## Configuration
-
-### Change Admin Password:
-Edit `auth.js` and modify the `ADMIN_PASSWORD` constant.
-
-### Adjust Shift Times:
-Edit `admin.js` and modify the `SEASONAL_SHIFT_INFO` object to adjust shift hours for summer/winter seasons.
-
-### Change National Holidays:
-Edit `admin.js` and modify the `NATIONAL_HOLIDAYS` object.
+1. Hard rules: no assignments on requested days off, none on unavailable
+   weekdays, one shift per day, max 80 hours per 14-day pay period
+2. Pay periods are 14 days counted from January 1 (not month-aligned)
+3. Preferred weekdays are assigned first, then hours are distributed at an
+   equal rate toward each mentor's weekly target, then remaining shifts are
+   force-filled and flagged
 
 ## Firebase Collections
 
 ### `timeOff/{CAMPUS_ID}`
-Stores employee time-off selections:
+
+Employee time-off selections, keyed by month, then day-of-month, with one
+array entry per slot:
+
 ```
 {
   mentors: {
-    "1": ["Aidri B", "Avree M"],
-    "2": ["Sofia D"],
-    ...
+    "2026-01": {
+      "5": ["Sofia", "", ""],
+      "12": ["Aidri", "Emma", ""]
+    }
   }
 }
 ```
 
-### `mentorInfo/{CAMPUS_ID}` (New)
-Stores mentor configuration:
+Legacy documents keyed by bare day-of-month are migrated automatically the
+first time either page loads them.
+
+### `mentorInfo/{CAMPUS_ID}`
+
 ```
 {
   mentors: {
-    "Aidri B": {
+    "Aidri": {
       hours_wanted: 30,
-      weekdays: ["Monday", "Tuesday"],
+      weekdays: ["Monday"],          // recurring weekly days off
       preferred_weekdays: ["Sunday"],
-      weekday_behavior: ["Re"],
-      hard_dates: [1, 2, 3, ...],
-      soft_dates: []
-    },
-    ...
+      hard_dates: [1, 2, 3],         // requested days off (from the calendar)
+      show_on_calendar: true,        // appears in employee-calendar dropdowns
+      include_in_scheduling: true    // eligible for generated schedules
+    }
   }
 }
 ```
 
-## Technical Details
+### `calendarConfig/{CAMPUS_ID}`
 
-The scheduling algorithm:
-1. Splits the month into two pay periods (15 days each)
-2. Prioritizes days with fewer available mentors
-3. Assigns shifts based on:
-   - Mentor availability (hard dates from calendar)
-   - Weekday preferences
-   - Hours wanted
-   - Avoiding overtime (max 80 hours per pay period)
-   - Special Saturday rotation rules
-4. Generates optimized schedule minimizing conflicts
+`{ targetMonth, targetYear, slotsAvailable }` - which month the employee
+calendar displays and how many request slots each day has.
 
-## Browser Compatibility
-- Modern browsers with ES6 module support
-- Firebase 10.7.0+
-- Tested on Chrome, Firefox, Safari, Edge
+### `savedSchedules/{CAMPUS_ID}_{month}_{year}`
+
+One document per generated month. See `SCHEDULE_MANAGEMENT.md`.
+
+## Configuration
+
+- **Admin password**: `ADMIN_PASSWORD` in `auth.js`
+- **Shift hours**: `SEASONAL_SHIFT_INFO` in `admin.js`
+- **Holidays**: `computeNationalHolidays` in `admin.js`
+- **Campus**: `CAMPUS_ID` in `config.js`
+
+## Tests
+
+Pure logic (scheduler rules, date helpers) is covered by Node's built-in test
+runner - no dependencies to install:
+
+```
+npm test
+```
+
+Run from WSL (or anywhere Node 18+ is available).
+
+## Known limitations
+
+- Client-side password auth only; Firestore security rules should be added
+  before treating the data as protected
+- Holidays are hardcoded for the St. George campus (includes Utah state
+  holidays)
