@@ -1100,7 +1100,12 @@ function showMentorDropdown(span, day, shift, currentName) {
     select.appendChild(option);
   });
 
+  // Removing a focused select re-fires blur mid-removal; guard against reentry
+  let restored = false;
   const restoreSpan = () => {
+    if (restored) return;
+    restored = true;
+    select.onblur = null;
     span.style.display = "inline";
     select.remove();
   };
